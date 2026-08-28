@@ -90,10 +90,16 @@
             transition: background 0.2s;
         }
 
-        .btn-primary { background: var(--brand-dark); color: white; }
+        .btn-primary {
+            background: var(--brand-dark);
+            color: white;
+        }
         .btn-primary:hover { background: #143528; }
 
-        .btn-save { background: #27ae60; color: white; }
+        .btn-save {
+            background: #27ae60;
+            color: white;
+        }
         .btn-save:hover { background: #219653; }
 
         .btn-export {
@@ -125,7 +131,9 @@
             border: 1px solid #e1e8ed;
         }
 
-        .filter-grid .form-group { margin-bottom: 0; }
+        .filter-grid .form-group {
+            margin-bottom: 0;
+        }
 
         /* Receipt Layout */
         .receipt-card {
@@ -236,7 +244,6 @@
             color: #000;
         }
 
-        /* Clean QR Code Container (No Center Logo) */
         .qr-wrapper {
             text-align: center;
             margin-top: 25px;
@@ -244,25 +251,20 @@
             border-top: 1px dashed #cbd5e0;
         }
 
-        .qr-container {
-            display: inline-block;
-            width: 120px;
-            height: 120px;
-            background: #ffffff;
-            padding: 5px;
-            border-radius: 4px;
+        #qrcode { 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 8px; 
+            min-height: 100px;
         }
 
-        #qrcode {
-            width: 100%;
-            height: 100%;
-        }
-
-        #qrcode svg {
+        #qrcode img {
             display: block;
             margin: 0 auto;
-            width: 100%;
-            height: 100%;
+            border: 1px solid #f0f0f0;
+            padding: 4px;
+            background: #fff;
         }
 
         table.history-table {
@@ -318,10 +320,26 @@
         }
 
         @media print {
-            body { background: #ffffff; padding: 0; margin: 0; }
-            body * { visibility: hidden; }
-            .main-wrapper, .history-wrapper, .card { box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
-            #receipt, #receipt * { visibility: visible; }
+            body {
+                background: #ffffff;
+                padding: 0;
+                margin: 0;
+            }
+
+            body * {
+                visibility: hidden;
+            }
+
+            .main-wrapper, .history-wrapper, .card {
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            #receipt, #receipt * {
+                visibility: visible;
+            }
+
             #receipt {
                 position: fixed;
                 left: 50%;
@@ -337,6 +355,7 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
+
             .watermark-bg {
                 opacity: 0.08 !important;
                 -webkit-print-color-adjust: exact;
@@ -390,4 +409,388 @@
                 <option value="Cash">Cash</option>
                 <option value="Bank Transfer">Bank Transfer</option>
                 <option value="Cheque">Cheque</option>
-                <option value="
+                <option value="Credit Card">Credit Card</option>
+                <option value="Bill Payment">Bill Payment</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Amount</label>
+            <input type="number" id="amount" value="8614">
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-save" onclick="saveRecord()">Save Record</button>
+            <button class="btn-primary" onclick="window.print()">Print Receipt</button>
+        </div>
+    </div>
+
+    <div>
+        <div class="receipt-card" id="receipt">
+            <img src="AZAD_WATTAN_LOGO.png" alt="Watermark" class="watermark-bg">
+
+            <div class="receipt-content">
+                <div class="receipt-header">
+                    <img src="AZAD_WATTAN_LOGO.png" alt="AZAD WATTAN Logo" class="company-logo">
+                    <div class="company-name">AZAD WATTAN GENERAL TRADING CO.</div>
+                    <div class="contact-details">
+                        <span>WhatsApp: 0320-8888688</span> | <span>Email: azadwattan2023@gmail.com</span>
+                    </div>
+                </div>
+
+                <h3 class="status-title">Transaction Successful</h3>
+                
+                <div class="divider"></div>
+
+                <div class="receipt-header-title">Transaction Receipt</div>
+
+                <div class="receipt-row highlight">
+                    <span class="label">Invoice No.:</span>
+                    <span class="value" id="outInvoiceNo">--</span>
+                </div>
+
+                <div class="receipt-row">
+                    <span class="label">Date:</span>
+                    <span class="value" id="outDate">--</span>
+                </div>
+
+                <div class="receipt-row">
+                    <span class="label">Received From:</span>
+                    <span class="value" id="outReceivedFrom">--</span>
+                </div>
+
+                <div class="receipt-row">
+                    <span class="label">Received To:</span>
+                    <span class="value" id="outReceivedTo">--</span>
+                </div>
+
+                <div class="receipt-row">
+                    <span class="label">Description:</span>
+                    <span class="value" id="outDescription">--</span>
+                </div>
+
+                <div class="receipt-row">
+                    <span class="label">Transaction Type:</span>
+                    <span class="value" id="outTxType">--</span>
+                </div>
+
+                <div class="receipt-row">
+                    <span class="label">Amount:</span>
+                    <span class="value" id="outAmount">Rs. 0</span>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="total-section">
+                    <span>Total Amount:</span>
+                    <span id="outTotal">Rs. 0</span>
+                </div>
+
+                <div class="qr-wrapper">
+                    <div id="qrcode"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="history-wrapper">
+    <div class="card">
+        <button class="btn-export" onclick="exportToCSV()">Export Excel (CSV)</button>
+        <h2 class="form-title">Saved Transaction Records</h2>
+
+        <div class="filter-grid">
+            <div class="form-group">
+                <label>Search Keyword</label>
+                <input type="text" id="filterSearch" placeholder="Invoice, Name, Desc..." oninput="loadHistory()">
+            </div>
+            <div class="form-group">
+                <label>Transaction Type</label>
+                <select id="filterTxType" onchange="loadHistory()">
+                    <option value="">All Types</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Bill Payment">Bill Payment</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Currency</label>
+                <select id="filterCurrency" onchange="loadHistory()">
+                    <option value="">All Currencies</option>
+                    <option value="Rs.">PKR (Rs.)</option>
+                    <option value="AFN">AFN (؋)</option>
+                    <option value="$">$ (USD)</option>
+                    <option value="AED">AED (Dirham)</option>
+                    <option value="SAR">SAR (Riyal)</option>
+                    <option value="€">EUR (€)</option>
+                    <option value="£">GBP (£)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>From Date</label>
+                <input type="date" id="filterDateFrom" onchange="loadHistory()">
+            </div>
+            <div class="form-group">
+                <label>To Date</label>
+                <input type="date" id="filterDateTo" onchange="loadHistory()">
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button class="btn-reset" onclick="resetFilters()">Reset Filters</button>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Invoice No.</th>
+                        <th>Received From</th>
+                        <th>Received To</th>
+                        <th>Description</th>
+                        <th>Tx Type</th>
+                        <th>Total Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="historyBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let activeReceiptDate = null;
+
+    function generateInvoiceNo() {
+        return Math.floor(100000000000 + Math.random() * 900000000000);
+    }
+    
+    document.getElementById('invoiceNo').value = generateInvoiceNo();
+
+    function formatDate(d) {
+        const pad = (n) => (n < 10 ? '0' + n : n);
+        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function parseReceiptDate(dateStr) {
+        if (!dateStr) return null;
+        const parts = dateStr.split(' ');
+        const dateParts = parts[0].split('/');
+        if (dateParts.length === 3) {
+            return new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+        }
+        return null;
+    }
+
+    const updateReceipt = () => {
+        try {
+            const curr = document.getElementById('currency').value;
+            const invoiceNo = document.getElementById('invoiceNo').value || '--';
+            const receivedFrom = document.getElementById('receivedFrom').value || '--';
+            const receivedTo = document.getElementById('receivedTo').value || '--';
+            const description = document.getElementById('description').value || '--';
+            const txType = document.getElementById('txType').value || '--';
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+
+            const displayDate = activeReceiptDate || formatDate(new Date());
+
+            document.getElementById('outInvoiceNo').innerText = invoiceNo;
+            document.getElementById('outDate').innerText = displayDate;
+            document.getElementById('outReceivedFrom').innerText = receivedFrom;
+            document.getElementById('outReceivedTo').innerText = receivedTo;
+            document.getElementById('outDescription').innerText = description;
+            document.getElementById('outTxType').innerText = txType;
+            
+            document.getElementById('outAmount').innerText = curr + amount.toLocaleString();
+            document.getElementById('outTotal').innerText = curr + amount.toLocaleString();
+
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            
+            const qrPayload = `AZAD WATTAN GENERAL TRADING CO.\nWhatsApp: 0320-8888688\nEmail: azadwattan2023@gmail.com\nInvoice No: ${invoiceNo}\nReceived From: ${receivedFrom}\nReceived To: ${receivedTo}\nDate: ${displayDate}\nTotal: ${curr}${amount.toLocaleString()}`;
+            const encodedText = encodeURIComponent(qrPayload);
+            
+            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodedText}" width="100" height="100" alt="QR Code">`;
+        } catch (err) {
+            console.error("Error updating receipt preview:", err);
+        }
+    };
+
+    function saveRecord() {
+        const curr = document.getElementById('currency').value;
+        const invoiceNo = document.getElementById('invoiceNo').value;
+        const receivedFrom = document.getElementById('receivedFrom').value;
+        const receivedTo = document.getElementById('receivedTo').value;
+        const description = document.getElementById('description').value;
+        const txType = document.getElementById('txType').value;
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const recordDate = activeReceiptDate || formatDate(new Date());
+
+        const record = {
+            date: recordDate,
+            invoiceNo: invoiceNo,
+            receivedFrom: receivedFrom,
+            receivedTo: receivedTo,
+            description: description,
+            txType: txType,
+            currency: curr.trim(),
+            amount: amount
+        };
+
+        let records = JSON.parse(localStorage.getItem('azad_receipts') || '[]');
+        records.push(record);
+        localStorage.setItem('azad_receipts', JSON.stringify(records));
+
+        activeReceiptDate = null;
+        document.getElementById('invoiceNo').value = generateInvoiceNo();
+        updateReceipt();
+        loadHistory();
+        alert('Transaction Saved Successfully!');
+    }
+
+    function loadHistory() {
+        try {
+            let records = JSON.parse(localStorage.getItem('azad_receipts') || '[]');
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = '';
+
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d;">No saved records found.</td></tr>';
+                return;
+            }
+
+            const searchVal = document.getElementById('filterSearch').value.toLowerCase().trim();
+            const txTypeVal = document.getElementById('filterTxType').value;
+            const currencyVal = document.getElementById('filterCurrency').value;
+            const dateFromVal = document.getElementById('filterDateFrom').value ? new Date(document.getElementById('filterDateFrom').value) : null;
+            const dateToVal = document.getElementById('filterDateTo').value ? new Date(document.getElementById('filterDateTo').value) : null;
+            if (dateToVal) dateToVal.setHours(23, 59, 59, 999);
+
+            let visibleCount = 0;
+
+            records.slice().reverse().forEach((item, index) => {
+                const actualIndex = records.length - 1 - index;
+
+                const textMatch = !searchVal || 
+                    (item.invoiceNo && item.invoiceNo.toString().toLowerCase().includes(searchVal)) ||
+                    (item.receivedFrom && item.receivedFrom.toLowerCase().includes(searchVal)) ||
+                    (item.receivedTo && item.receivedTo.toLowerCase().includes(searchVal)) ||
+                    (item.description && item.description.toLowerCase().includes(searchVal));
+
+                const txMatch = !txTypeVal || item.txType === txTypeVal;
+                const currMatch = !currencyVal || (item.currency || '').trim() === currencyVal.trim();
+
+                const recDateObj = parseReceiptDate(item.date);
+                let dateMatch = true;
+                if (recDateObj) {
+                    if (dateFromVal && recDateObj < dateFromVal) dateMatch = false;
+                    if (dateToVal && recDateObj > dateToVal) dateMatch = false;
+                }
+
+                if (textMatch && txMatch && currMatch && dateMatch) {
+                    visibleCount++;
+                    const row = `<tr>
+                        <td>${item.date}</td>
+                        <td>${item.invoiceNo}</td>
+                        <td>${item.receivedFrom || '-'}</td>
+                        <td>${item.receivedTo || '-'}</td>
+                        <td>${item.description || '-'}</td>
+                        <td>${item.txType}</td>
+                        <td><strong>${item.currency} ${item.amount.toLocaleString()}</strong></td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-view" onclick="viewReceipt(${actualIndex})">View / Print</button>
+                                <button class="btn-delete" onclick="deleteRecord(${actualIndex})">Delete</button>
+                            </div>
+                        </td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                }
+            });
+
+            if (visibleCount === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d;">No matching transaction records found.</td></tr>';
+            }
+        } catch (err) {
+            console.error("Error loading saved history:", err);
+        }
+    }
+
+    function resetFilters() {
+        document.getElementById('filterSearch').value = '';
+        document.getElementById('filterTxType').value = '';
+        document.getElementById('filterCurrency').value = '';
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        loadHistory();
+    }
+
+    function viewReceipt(index) {
+        let records = JSON.parse(localStorage.getItem('azad_receipts') || '[]');
+        const item = records[index];
+        if (!item) return;
+
+        const selectCurr = document.getElementById('currency');
+        const formattedCurr = item.currency.endsWith(' ') ? item.currency : item.currency + ' ';
+        selectCurr.value = formattedCurr;
+        
+        document.getElementById('invoiceNo').value = item.invoiceNo;
+        document.getElementById('receivedFrom').value = item.receivedFrom;
+        document.getElementById('receivedTo').value = item.receivedTo;
+        document.getElementById('description').value = item.description;
+        document.getElementById('txType').value = item.txType;
+        document.getElementById('amount').value = item.amount;
+        
+        activeReceiptDate = item.date;
+        updateReceipt();
+
+        document.getElementById('receipt').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteRecord(index) {
+        let records = JSON.parse(localStorage.getItem('azad_receipts') || '[]');
+        records.splice(index, 1);
+        localStorage.setItem('azad_receipts', JSON.stringify(records));
+        loadHistory();
+    }
+
+    function exportToCSV() {
+        let records = JSON.parse(localStorage.getItem('azad_receipts') || '[]');
+        if (records.length === 0) {
+            alert('No records to export!');
+            return;
+        }
+
+        let csv = 'Date,Invoice No.,Received From,Received To,Description,Transaction Type,Currency,Amount\n';
+        records.forEach(r => {
+            const cleanCurr = (r.currency || '').trim();
+            csv += `"${r.date}","${r.invoiceNo}","${r.receivedFrom || ''}","${r.receivedTo || ''}","${r.description || ''}","${r.txType || ''}","${cleanCurr}","${r.amount}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'azad_wattan_receipts.csv');
+        a.click();
+    }
+
+    document.querySelectorAll('.main-wrapper input, .main-wrapper select').forEach(el => {
+        el.addEventListener('input', () => {
+            activeReceiptDate = null;
+            updateReceipt();
+        });
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+        updateReceipt();
+        loadHistory();
+    });
+</script>
+
+</body>
+</html>
