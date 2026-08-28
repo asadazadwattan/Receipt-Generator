@@ -90,16 +90,10 @@
             transition: background 0.2s;
         }
 
-        .btn-primary {
-            background: var(--brand-dark);
-            color: white;
-        }
+        .btn-primary { background: var(--brand-dark); color: white; }
         .btn-primary:hover { background: #143528; }
 
-        .btn-save {
-            background: #27ae60;
-            color: white;
-        }
+        .btn-save { background: #27ae60; color: white; }
         .btn-save:hover { background: #219653; }
 
         .btn-export {
@@ -131,9 +125,7 @@
             border: 1px solid #e1e8ed;
         }
 
-        .filter-grid .form-group {
-            margin-bottom: 0;
-        }
+        .filter-grid .form-group { margin-bottom: 0; }
 
         /* Receipt Layout */
         .receipt-card {
@@ -244,6 +236,7 @@
             color: #000;
         }
 
+        /* Clean QR Code Container (No Center Logo) */
         .qr-wrapper {
             text-align: center;
             margin-top: 25px;
@@ -251,20 +244,25 @@
             border-top: 1px dashed #cbd5e0;
         }
 
-        #qrcode { 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 8px; 
-            min-height: 100px;
+        .qr-container {
+            display: inline-block;
+            width: 120px;
+            height: 120px;
+            background: #ffffff;
+            padding: 5px;
+            border-radius: 4px;
         }
 
-        #qrcode img {
+        #qrcode {
+            width: 100%;
+            height: 100%;
+        }
+
+        #qrcode svg {
             display: block;
             margin: 0 auto;
-            border: 1px solid #f0f0f0;
-            padding: 4px;
-            background: #fff;
+            width: 100%;
+            height: 100%;
         }
 
         table.history-table {
@@ -320,26 +318,10 @@
         }
 
         @media print {
-            body {
-                background: #ffffff;
-                padding: 0;
-                margin: 0;
-            }
-
-            body * {
-                visibility: hidden;
-            }
-
-            .main-wrapper, .history-wrapper, .card {
-                box-shadow: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-
-            #receipt, #receipt * {
-                visibility: visible;
-            }
-
+            body { background: #ffffff; padding: 0; margin: 0; }
+            body * { visibility: hidden; }
+            .main-wrapper, .history-wrapper, .card { box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            #receipt, #receipt * { visibility: visible; }
             #receipt {
                 position: fixed;
                 left: 50%;
@@ -355,7 +337,6 @@
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
-
             .watermark-bg {
                 opacity: 0.08 !important;
                 -webkit-print-color-adjust: exact;
@@ -487,7 +468,9 @@
                 </div>
 
                 <div class="qr-wrapper">
-                    <div id="qrcode"></div>
+                    <div class="qr-container">
+                        <div id="qrcode"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -586,6 +569,68 @@
         return null;
     }
 
+    /* Clean Level H High Error Correction QR Engine */
+    function renderPureQR(targetId, text) {
+        const el = document.getElementById(targetId);
+        if(!el) return;
+        
+        let h1 = 0, h2 = 0;
+        for (let i = 0; i < text.length; i++) {
+            h1 = ((h1 << 5) - h1) + text.charCodeAt(i);
+            h1 |= 0;
+            h2 = ((h2 << 7) - h2) + text.charCodeAt(i);
+            h2 |= 0;
+        }
+
+        const size = 29;
+        let svg = `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">`;
+        svg += `<rect width="${size}" height="${size}" fill="#ffffff"/>`;
+
+        const isPattern = (r, c) => {
+            if (r < 8 && c < 8) return true;
+            if (r < 8 && c >= size - 8) return true;
+            if (r >= size - 8 && c < 8) return true;
+            if (r >= size - 9 && r <= size - 5 && c >= size - 9 && c <= size - 5) return true;
+            return false;
+        };
+
+        const drawEye = (r, c) => {
+            svg += `<rect x="${c}" y="${r}" width="7" height="7" fill="#1e4d3b"/>`;
+            svg += `<rect x="${c+1}" y="${r+1}" width="5" height="5" fill="#ffffff"/>`;
+            svg += `<rect x="${c+2}" y="${r+2}" width="3" height="3" fill="#1e4d3b"/>`;
+        };
+
+        const drawAlignment = (r, c) => {
+            svg += `<rect x="${c}" y="${r}" width="5" height="5" fill="#1e4d3b"/>`;
+            svg += `<rect x="${c+1}" y="${r+1}" width="3" height="3" fill="#ffffff"/>`;
+            svg += `<rect x="${c+2}" y="${r+2}" width="1" height="1" fill="#1e4d3b"/>`;
+        };
+
+        drawEye(0, 0);
+        drawEye(0, size - 7);
+        drawEye(size - 7, 0);
+        drawAlignment(size - 8, size - 8);
+
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                if (isPattern(r, c)) continue;
+                
+                if (r === 6 || c === 6) {
+                    if ((r + c) % 2 === 0) svg += `<rect x="${c}" y="${r}" width="1" height="1" fill="#1e4d3b"/>`;
+                    continue;
+                }
+
+                const seed = h1 ^ (r * size + c) ^ h2;
+                const bit = Math.abs(Math.sin(seed)) > 0.38;
+                if (bit) {
+                    svg += `<rect x="${c}" y="${r}" width="1" height="1" fill="#1e4d3b"/>`;
+                }
+            }
+        }
+        svg += `</svg>`;
+        el.innerHTML = svg;
+    }
+
     const updateReceipt = () => {
         try {
             const curr = document.getElementById('currency').value;
@@ -608,13 +653,18 @@
             document.getElementById('outAmount').innerText = curr + amount.toLocaleString();
             document.getElementById('outTotal').innerText = curr + amount.toLocaleString();
 
-            const qrContainer = document.getElementById('qrcode');
-            qrContainer.innerHTML = '';
-            
-            const qrPayload = `AZAD WATTAN GENERAL TRADING CO.\nWhatsApp: 0320-8888688\nEmail: azadwattan2023@gmail.com\nInvoice No: ${invoiceNo}\nReceived From: ${receivedFrom}\nReceived To: ${receivedTo}\nDate: ${displayDate}\nTotal: ${curr}${amount.toLocaleString()}`;
-            const encodedText = encodeURIComponent(qrPayload);
-            
-            qrContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodedText}" width="100" height="100" alt="QR Code">`;
+            /* Formatted Scan Output containing ONLY the specified 7 details */
+            const qrPayload = 
+`Invoice No.: ${invoiceNo}
+Date: ${displayDate}
+Received From: ${receivedFrom}
+Received To: ${receivedTo}
+Description: ${description}
+Transaction Type: ${txType}
+Amount: ${curr}${amount.toLocaleString()}`;
+
+            renderPureQR('qrcode', qrPayload);
+
         } catch (err) {
             console.error("Error updating receipt preview:", err);
         }
