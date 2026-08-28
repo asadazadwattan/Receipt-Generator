@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZAD WATTAN - Transaction Receipt & History</title>
+    <style>
+        :root {
+            --brand-green: #2ecc71;
+            --brand-dark: #1e4d3b;
+            --text-orange: #e67e22;
+            --text-gray: #7f8c8d;
+            --text-dark: #2c3e50;
+            --bg-body: #ecefe6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-body);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .main-wrapper {
+            max-width: 950px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        .history-wrapper {
+            max-width: 950px;
+            margin: 25px auto 0 auto;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-title {
+            margin-top: 0;
+            color: var(--brand-dark);
+            font-size: 18px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: var(--text-gray);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: var(--brand-dark); color: white; }
+        .btn-primary:hover { background: #143528; }
+
+        .btn-save { background: #27ae60; color: white; }
+        .btn-save:hover { background: #219653; }
+
+        .btn-export {
+            background: #2980b9;
+            color: white;
+            padding: 8px 15px;
+            width: auto;
+            float: right;
+            margin-bottom: 15px;
+        }
+        .btn-export:hover { background: #1c5980; }
+
+        .btn-reset {
+            background: #95a5a6;
+            color: white;
+            padding: 10px;
+            font-size: 13px;
+        }
+        .btn-reset:hover { background: #7f8c8d; }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .filter-grid .form-group { margin-bottom: 0; }
+
+        /* Receipt Layout */
+        .receipt-card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            padding: 30px 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e1e8ed;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .watermark-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: auto;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .receipt-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .receipt-header .company-logo {
+            max-width: 80px;
+            max-height: 80px;
+            height: auto;
+            width: auto;
+            margin: 0 auto 8px auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        .company-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--brand-dark);
+            letter-spacing: 0.5px;
+            margin: 0 0 5px 0;
+            text-transform: uppercase;
+        }
+
+        .contact-details {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+
+        .contact-details span {
+            display: inline-block;
+            margin: 0 4px;
+        }
+
+        .status-title {
+            color: var(--brand-green);
+            font-size: 22px;
+            font-weight: 500;
+            text-align: center;
+            margin: 15px 0 15px 0;
+        }
+
+        .divider {
+            border-top: 1px solid #7f8c8d;
+            opacity: 0.4;
+            margin: 10px 0;
+        }
+
+        .receipt-header-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #000;
+            margin: 12px 0 20px 0;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .receipt-row .label { color: var(--text-gray); }
+        .receipt-row .value { color: var(--text-dark); font-weight: 500; text-align: right; }
+        .receipt-row.highlight .label, .receipt-row.highlight .value { color: var(--text-orange); font-weight: bold; }
+
+        .total-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        /* Clean QR Code Container (No Center Logo) */
+        .qr-wrapper {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px dashed #cbd5e0;
+        }
+
+        .qr-container {
+            display: inline-block;
+            width: 120px;
+            height: 120px;
+            background: #ffffff;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        #qrcode {
+            width: 100%;
+            height: 100%;
+        }
+
+        #qrcode svg {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: 100%;
+        }
+
+        table.history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        table.history-table th, table.history-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        table.history-table th {
+            background-color: #f8f9fa;
+            color: var(--brand-dark);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-view {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 9px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .btn-view:hover { background: #2980b9; }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 9px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .btn-delete:hover { background: #c0392b; }
+
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+
+        @media print {
+            body { background: #ffffff; padding: 0; margin: 0; }
+            body * { visibility: hidden; }
+            .main-wrapper, .history-wrapper, .card { box-shadow: none !important; padding: 0 !important; margin: 0 !important; }
+            #receipt, #receipt * { visibility: visible; }
+            #receipt {
+                position: fixed;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%) scale(0.95);
+                transform-origin: center center;
+                width: 420px;
+                max-width: 90%;
+                box-shadow: none;
+                border: 1px solid #dcdde1;
+                border-radius: 16px;
+                page-break-inside: avoid;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .watermark-bg {
+                opacity: 0.08 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-wrapper">
+    <div class="card">
+        <h2 class="form-title">Receipt Details Form</h2>
+        
+        <div class="form-group">
+            <label>Currency</label>
+            <select id="currency">
+                <option value="Rs. ">PKR (Rs.)</option>
+                <option value="AFN ">AFN (؋)</option>
+                <option value="$">$ (USD)</option>
+                <option value="AED ">AED (Dirham)</option>
+                <option value="SAR ">SAR (Riyal)</option>
+                <option value="€">EUR (€)</option>
+                <option value="£">GBP (£)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Invoice No.</label>
+            <input type="text" id="invoiceNo">
+        </div>
+
+        <div class="form-group">
+            <label>Received From</label>
+            <input type="text" id="receivedFrom" placeholder="Customer / Client Name">
+        </div>
+
+        <div class="form-group">
+            <label>Received To</label>
+            <input type="text" id="receivedTo" value="AZAD WATTAN GENERAL TRADING CO.">
+        </div>
+
+        <div class="form-group">
+            <label>Description</label>
+            <input type="text" id="description" placeholder="Goods / Services Description">
+        </div>
+
+        <div class="form-group">
+            <label>Transaction Type</label>
+            <select id="txType">
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+                <option value="
