@@ -800,16 +800,26 @@ Amount: ${curr}${amount.toLocaleString()}`;
     });
 </script>
 
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyBMSn6BSvAJeUiACimff_4jm7WwnyhwV_A",
-  authDomain: "receipt-generator-5090a.firebaseapp.com",
-  projectId: "receipt-generator-5090a",
-  storageBucket: "receipt-generator-5090a.firebasestorage.app",
-  messagingSenderId: "375963217509",
-  appId: "1:375963217509:web:058a3636f32f5bf41be08c",
-  measurementId: "G-TP5TR2G53Q"
-};
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
 
-</body>
-</html>
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBMSn6BSvAJeUiACimff_4jm7WwnyhwV_A",
+    authDomain: "receipt-generator-5090a.firebaseapp.com",
+    projectId: "receipt-generator-5090a",
+    storageBucket: "receipt-generator-5090a.firebasestorage.app",
+    messagingSenderId: "375963217509",
+    appId: "1:375963217509:web:058a3636f32f5bf41be08c",
+    measurementId: "G-TP5TR2G53Q"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
