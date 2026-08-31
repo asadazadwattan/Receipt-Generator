@@ -1,26 +1,1171 @@
-function captureReceiptScreenshot() {
-    const receiptElement = document.getElementById('receipt');
-    if (!receiptElement) return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZAD WATTAN - Secure Cloud Login & Receipt Generator</title>
+    <!-- Standard Reliable QR Code Library CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- html2canvas Library CDN for Screenshot Capture -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Interact.js Library CDN for Drag and Resize -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.28/interact.min.js"></script>
+    
+    <style>
+        :root {
+            --brand-green: #2ecc71;
+            --brand-dark: #1e4d3b;
+            --text-orange: #e67e22;
+            --text-gray: #7f8c8d;
+            --text-dark: #2c3e50;
+            --bg-body: #ecefe6;
+        }
 
-    // Force update receipt and QR code prior to screenshot capture
-    updateReceipt();
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-body);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+        }
 
-    // Give a small 100ms delay to let the QR code image/canvas completely paint
-    setTimeout(() => {
-        html2canvas(receiptElement, {
-            scale: 3, 
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: "#ffffff",
-            logging: false
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `receipt_${document.getElementById('outInvoiceNo').innerText}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }).catch(err => {
-            console.error("Screenshot capture failed:", err);
-            alert("Failed to capture screenshot. Please try again.");
+        /* Login Screen Overlay */
+        #loginOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(30, 77, 59, 0.92);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-card {
+            background: #ffffff;
+            padding: 35px;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .login-card h2 {
+            color: var(--brand-dark);
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-size: 22px;
+        }
+
+        .login-card p {
+            color: var(--text-gray);
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .app-container {
+            display: none; /* Hidden until authenticated */
+        }
+
+        .top-bar {
+            max-width: 950px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 12px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+        }
+
+        .user-info {
+            font-size: 13px;
+            color: var(--text-gray);
+        }
+
+        .user-info strong {
+            color: var(--brand-dark);
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            padding: 6px 12px;
+            width: auto;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            font-weight: bold;
+        }
+        .btn-logout:hover { background: #c0392b; }
+
+        .main-wrapper {
+            max-width: 950px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            align-items: stretch;
+        }
+
+        .history-wrapper {
+            max-width: 950px;
+            margin: 25px auto 0 auto;
+        }
+
+        /* Draggable & Resizable Interactive Elements Styles */
+        .card, .receipt-card-container {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            touch-action: none;
+            position: relative;
+            overflow: hidden;
+            min-width: 280px;
+            min-height: 200px;
+        }
+
+        .form-title {
+            margin-top: 0;
+            color: var(--brand-dark);
+            font-size: 18px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: grab; /* Indicates sections are draggable by header */
+        }
+        .form-title:active {
+            cursor: grabbing;
+        }
+
+        .badge-dimension {
+            font-size: 11px;
+            background: #e1e8ed;
+            color: var(--text-dark);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: var(--text-gray);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dcdde1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-primary { background: var(--brand-dark); color: white; }
+        .btn-primary:hover { background: #143528; }
+
+        .btn-save { background: #27ae60; color: white; }
+        .btn-save:hover { background: #219653; }
+
+        .btn-screenshot { background: #8e44ad; color: white; }
+        .btn-screenshot:hover { background: #732d91; }
+
+        .btn-export {
+            background: #2980b9;
+            color: white;
+            padding: 8px 15px;
+            width: auto;
+            float: right;
+            margin-bottom: 15px;
+        }
+        .btn-export:hover { background: #1c5980; }
+
+        .btn-reset {
+            background: #95a5a6;
+            color: white;
+            padding: 10px;
+            font-size: 13px;
+        }
+        .btn-reset:hover { background: #7f8c8d; }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #e1e8ed;
+            text-align: left;
+        }
+
+        .filter-grid .form-group { margin-bottom: 0; }
+
+        /* Receipt Layout Container */
+        .receipt-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e1e8ed;
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0 auto;
+        }
+
+        .watermark-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: auto;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .receipt-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .receipt-header .company-logo {
+            max-width: 65px;
+            max-height: 65px;
+            height: auto;
+            width: auto;
+            margin: 0 auto 6px auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--brand-dark);
+            letter-spacing: 0.5px;
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+        }
+
+        .contact-details-footer {
+            font-size: 10px;
+            color: var(--text-gray);
+            margin-top: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .contact-info-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .contact-details-footer span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .contact-details-footer svg {
+            width: 12px;
+            height: 12px;
+            fill: var(--text-gray);
+            flex-shrink: 0;
+        }
+
+        .company-address {
+            font-size: 9.5px;
+            color: var(--text-gray);
+            text-align: center;
+            line-height: 1.25;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .company-address svg {
+            width: 12px;
+            height: 12px;
+            fill: var(--text-gray);
+            flex-shrink: 0;
+        }
+
+        .status-title {
+            color: var(--brand-green);
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .divider {
+            border-top: 1px solid #7f8c8d;
+            opacity: 0.4;
+            margin: 8px 0;
+        }
+
+        .receipt-header-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #000;
+            margin: 8px 0 12px 0;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 7px;
+            font-size: 13px;
+        }
+
+        .receipt-row .label { color: var(--text-gray); }
+        .receipt-row .value { color: var(--text-dark); font-weight: 500; text-align: right; }
+        .receipt-row.highlight .label, .receipt-row.highlight .value { color: var(--text-orange); font-weight: bold; }
+
+        .total-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #000;
+        }
+
+        .qr-wrapper {
+            text-align: center;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e0;
+        }
+
+        .qr-container {
+            display: inline-block;
+            width: 85px;
+            height: 85px;
+            background: #ffffff;
+            padding: 3px;
+            border-radius: 4px;
+        }
+
+        #qrcode {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+
+        #qrcode img {
+            display: block;
+            margin: 0 auto;
+            width: 80px;
+            height: 80px;
+        }
+
+        table.history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        table.history-table th, table.history-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        table.history-table th {
+            background-color: #f8f9fa;
+            color: var(--brand-dark);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-view {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 9px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .btn-view:hover { background: #2980b9; }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 9px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .btn-delete:hover { background: #c0392b; }
+
+        #loginError {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
+
+        @media print {
+            body { background: #ffffff !important; padding: 0 !important; margin: 0 !important; }
+            body * { visibility: hidden !important; }
+            #receipt, #receipt * { visibility: visible !important; }
+            #receipt {
+                display: block !important;
+                position: absolute !important;
+                left: 50% !important;
+                top: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                width: 420px !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: 1px solid #dcdde1 !important;
+                border-radius: 12px !important;
+                background-color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .watermark-bg {
+                opacity: 0.08 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Login Overlay Modal -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2>AZAD WATTAN</h2>
+        <p>Sign in with your secure account</p>
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="loginEmail" placeholder="admin@azadwattan.com">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••">
+        </div>
+        <div id="loginError"></div>
+        <button class="btn-primary" style="margin-top: 15px;" onclick="handleLogin()">Login to Cloud</button>
+    </div>
+</div>
+
+<!-- Main App Container (Unlocked after login) -->
+<div class="app-container" id="appContainer">
+    <div class="top-bar">
+        <div class="user-info">Logged in as: <strong id="userEmailDisplay">--</strong></div>
+        <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
+    </div>
+
+    <div class="main-wrapper">
+        <!-- Entry Form -->
+        <div class="card draggable-resizable-section">
+            <h2 class="form-title">Receipt Details Form</h2>
+            
+            <div class="form-group">
+                <label>Currency</label>
+                <select id="currency">
+                    <option value="Rs. ">PKR (Rs.)</option>
+                    <option value="AFN ">AFN (؋)</option>
+                    <option value="$">$ (USD)</option>
+                    <option value="AED ">AED (Dirham)</option>
+                    <option value="SAR ">SAR (Riyal)</option>
+                    <option value="€">EUR (€)</option>
+                    <option value="£">GBP (£)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Invoice No.</label>
+                <input type="text" id="invoiceNo">
+            </div>
+
+            <div class="form-group">
+                <label>Received From</label>
+                <input type="text" id="receivedFrom" placeholder="Customer / Client Name">
+            </div>
+
+            <div class="form-group">
+                <label>Received To</label>
+                <input type="text" id="receivedTo" value="AZAD WATTAN GENERAL TRADING CO.">
+            </div>
+
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="description" placeholder="Goods / Services Description">
+            </div>
+
+            <div class="form-group">
+                <label>Transaction Type</label>
+                <select id="txType">
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Bill Payment">Bill Payment</option>
+                    <option value="Hawala">Hawala</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Amount</label>
+                <input type="number" id="amount" value="8614">
+            </div>
+
+            <div class="btn-group" style="flex-direction: column;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-save" onclick="saveRecord()">Save Record</button>
+                    <button class="btn-primary" onclick="window.print()">Print Receipt</button>
+                </div>
+                <button class="btn-screenshot" onclick="captureReceiptScreenshot()">Capture Screenshot (1080x1920)</button>
+            </div>
+        </div>
+
+        <!-- Output Receipt Card Container -->
+        <div class="receipt-card-container draggable-resizable-section">
+            <h2 class="form-title">
+                Output Preview
+                <span class="badge-dimension">1080x1920</span>
+            </h2>
+            <div class="receipt-card" id="receipt">
+                <img src="AZAD_WATTAN_LOGO.png" alt="Watermark" class="watermark-bg">
+
+                <div class="receipt-content">
+                    <div class="receipt-header">
+                        <img src="AZAD_WATTAN_LOGO.png" alt="AZAD WATTAN Logo" class="company-logo">
+                        <div class="company-name">AZAD WATTAN GENERAL TRADING CO.</div>
+                    </div>
+
+                    <h3 class="status-title">Transaction Successful</h3>
+                    
+                    <div class="divider"></div>
+
+                    <div class="receipt-header-title">Transaction Receipt</div>
+
+                    <div class="receipt-row highlight">
+                        <span class="label">Invoice No.:</span>
+                        <span class="value" id="outInvoiceNo">--</span>
+                    </div>
+
+                    <div class="receipt-row">
+                        <span class="label">Date:</span>
+                        <span class="value" id="outDate">--</span>
+                    </div>
+
+                    <div class="receipt-row">
+                        <span class="label">Received From:</span>
+                        <span class="value" id="outReceivedFrom">--</span>
+                    </div>
+
+                    <div class="receipt-row">
+                        <span class="label">Received To:</span>
+                        <span class="value" id="outReceivedTo">--</span>
+                    </div>
+
+                    <div class="receipt-row">
+                        <span class="label">Description:</span>
+                        <span class="value" id="outDescription">--</span>
+                    </div>
+
+                    <div class="receipt-row">
+                        <span class="label">Transaction Type:</span>
+                        <span class="value" id="outTxType">--</span>
+                    </div>
+
+                    <div class="receipt-row">
+                        <span class="label">Amount:</span>
+                        <span class="value" id="outAmount">Rs. 0</span>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="total-section">
+                        <span>Total Amount:</span>
+                        <span id="outTotal">Rs. 0</span>
+                    </div>
+
+                    <div class="qr-wrapper">
+                        <div class="qr-container">
+                            <div id="qrcode"></div>
+                        </div>
+                        <div class="contact-details-footer">
+                            <div class="contact-info-row">
+                                <span>
+                                    <!-- WhatsApp Icon -->
+                                    <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448c-.63.345-6.195 3.396-6.195 3.396zm6.591-3.847c1.637.973 3.535 1.488 5.467 1.488 5.828 0 10.575-4.747 10.578-10.577.002-2.825-1.098-5.482-3.097-7.483-1.999-2.001-4.656-3.1-7.482-3.101-5.83 0-10.577 4.747-10.58 10.578-.001 1.997.521 3.939 1.517 5.641l-1.018 3.722 3.635-1.066zm10.741-7.986c-.294-.147-1.742-.86-2.012-.958-.27-.098-.466-.147-.663.147-.197.294-.764.958-.937 1.157-.173.199-.347.222-.641.074-.294-.147-1.24-.457-2.363-1.458-.873-.779-1.462-1.741-1.635-2.035-.173-.294-.018-.453.129-.6.132-.133.294-.347.441-.521.147-.174.196-.294.294-.49.098-.196.049-.368-.025-.515-.074-.147-.663-1.597-.909-2.186-.239-.578-.483-.5-.663-.51-.171-.009-.368-.009-.565-.009-.197 0-.515.074-.785.368-.27.294-1.033 1.009-1.033 2.461 0 1.452 1.059 2.856 1.206 3.053.147.197 2.083 3.181 5.044 4.461.705.304 1.253.486 1.682.622.711.226 1.359.194 1.869.118.573-.085 1.742-.712 1.988-1.399.246-.688.246-1.277.172-1.399-.074-.122-.27-.196-.564-.343z"/></svg>
+                                +92 320 8888688
+                            </span>
+                            <span>
+                                <!-- Email Icon -->
+                                <svg viewBox="0 0 24 24"><path d="M12 12.713l-11.985-9.713h23.97l-11.985 9.713zm0 2.574l-12-9.725v15.438h24v-15.438l-12 9.725z"/></svg>
+                                azadwattan2023@gmail.com
+                            </span>
+                        </div>
+                        <div class="company-address">
+                            <!-- Location Icon -->
+                            <svg viewBox="0 0 24 24"><path d="M12 0c-4.198 0-8 3.803-8 8 0 5.192 7.03 14.853 7.322 15.258.376.517 1.001.517 1.377 0 .292-.405 7.301-10.066 7.301-15.258 0-4.197-3.802-8-8-8zm0 11c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"/></svg>
+                            OFF#502, 5TH FLOOR, TASNEEM PLAZA, NEAR JANS BAKER, 6-SADDAR ROAD, PESHAWAR CANTT, PESHAWAR.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="history-wrapper">
+        <div class="card draggable-resizable-section">
+            <button class="btn-export" onclick="exportToCSV()">Export Excel (CSV)</button>
+            <h2 class="form-title">Cloud Transaction History (Synced Multi-Device)</h2>
+
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label>Search Keyword</label>
+                    <input type="text" id="filterSearch" placeholder="Invoice, Name, Desc..." oninput="renderTable()">
+                </div>
+                <div class="form-group">
+                    <label>Transaction Type</label>
+                    <select id="filterTxType" onchange="renderTable()">
+                        <option value="">All Types</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Bill Payment">Bill Payment</option>
+                        <option value="Hawala">Hawala</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Currency</label>
+                    <select id="filterCurrency" onchange="renderTable()">
+                        <option value="">All Currencies</option>
+                        <option value="Rs.">PKR (Rs.)</option>
+                        <option value="AFN">AFN (؋)</option>
+                        <option value="$">$ (USD)</option>
+                        <option value="AED">AED (Dirham)</option>
+                        <option value="SAR">SAR (Riyal)</option>
+                        <option value="€">EUR (€)</option>
+                        <option value="£">GBP (£)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>From Date</label>
+                    <input type="date" id="filterDateFrom" onchange="renderTable()">
+                </div>
+                <div class="form-group">
+                    <label>To Date</label>
+                    <input type="date" id="filterDateTo" onchange="renderTable()">
+                </div>
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button class="btn-reset" onclick="resetFilters()">Reset Filters</button>
+                </div>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Invoice No.</th>
+                            <th>Received From</th>
+                            <th>Received To</th>
+                            <th>Description</th>
+                            <th>Tx Type</th>
+                            <th>Total Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="8" style="text-align:center; color:#7f8c8d;">Connecting to Cloud Database...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Global App Scripts -->
+<script>
+    let activeReceiptDate = null;
+    let globalRecords = [];
+
+    function generateInvoiceNo() {
+        return Math.floor(100000000000 + Math.random() * 900000000000);
+    }
+
+    function formatDate(d) {
+        const pad = (n) => (n < 10 ? '0' + n : n);
+        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function parseReceiptDate(dateStr) {
+        if (!dateStr) return null;
+        const parts = dateStr.split(' ');
+        const dateParts = parts[0].split('/');
+        if (dateParts.length === 3) {
+            return new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+        }
+        return null;
+    }
+
+    function renderStandardQR(text) {
+        const container = document.getElementById('qrcode');
+        if (!container) return;
+        container.innerHTML = '';
+        if (typeof QRCode !== 'undefined') {
+            new QRCode(container, {
+                text: text,
+                width: 80,
+                height: 80,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+    }
+
+    function updateReceipt() {
+        try {
+            const curr = document.getElementById('currency').value;
+            const invoiceNo = document.getElementById('invoiceNo').value || '--';
+            const receivedFrom = document.getElementById('receivedFrom').value || '--';
+            const receivedTo = document.getElementById('receivedTo').value || '--';
+            const description = document.getElementById('description').value || '--';
+            const txType = document.getElementById('txType').value || '--';
+            const amount = parseFloat(document.getElementById('amount').value) || 0;
+
+            const displayDate = activeReceiptDate || formatDate(new Date());
+
+            document.getElementById('outInvoiceNo').innerText = invoiceNo;
+            document.getElementById('outDate').innerText = displayDate;
+            document.getElementById('outReceivedFrom').innerText = receivedFrom;
+            document.getElementById('outReceivedTo').innerText = receivedTo;
+            document.getElementById('outDescription').innerText = description;
+            document.getElementById('outTxType').innerText = txType;
+            
+            document.getElementById('outAmount').innerText = curr + amount.toLocaleString();
+            document.getElementById('outTotal').innerText = curr + amount.toLocaleString();
+
+            const qrPayload = 
+`Invoice No.: ${invoiceNo}
+Date: ${displayDate}
+Received From: ${receivedFrom}
+Received To: ${receivedTo}
+Description: ${description}
+Transaction Type: ${txType}
+Amount: ${curr}${amount.toLocaleString()}`;
+
+            renderStandardQR(qrPayload);
+
+        } catch (err) {
+            console.error("Error updating receipt preview:", err);
+        }
+    }
+
+    function captureReceiptScreenshot() {
+        const receiptElement = document.getElementById('receipt');
+        if (!receiptElement) return;
+
+        // Force update receipt and QR code prior to screenshot capture
+        updateReceipt();
+
+        // Give a small delay to let the QR code completely paint before capturing
+        setTimeout(() => {
+            html2canvas(receiptElement, {
+                scale: 3, 
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: "#ffffff",
+                logging: false
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `receipt_${document.getElementById('outInvoiceNo').innerText}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }).catch(err => {
+                console.error("Screenshot capture failed:", err);
+                alert("Failed to capture screenshot. Please try again.");
+            });
+        }, 150);
+    }
+
+    function resetFilters() {
+        document.getElementById('filterSearch').value = '';
+        document.getElementById('filterTxType').value = '';
+        document.getElementById('filterCurrency').value = '';
+        document.getElementById('filterDateFrom').value = '';
+        document.getElementById('filterDateTo').value = '';
+        if (typeof renderTable === 'function') renderTable();
+    }
+
+    function exportToCSV() {
+        if (globalRecords.length === 0) {
+            alert('No records to export!');
+            return;
+        }
+
+        let csv = 'Date,Invoice No.,Received From,Received To,Description,Transaction Type,Currency,Amount\n';
+        globalRecords.forEach(r => {
+            const cleanCurr = (r.currency || '').trim();
+            csv += `"${r.date}","${r.invoiceNo}","${r.receivedFrom || ''}","${r.receivedTo || ''}","${r.description || ''}","${r.txType || ''}","${cleanCurr}","${r.amount}"\n`;
         });
-    }, 100);
-}
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'azad_wattan_cloud_receipts.csv');
+        a.click();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('invoiceNo').value = generateInvoiceNo();
+        updateReceipt();
+        
+        // Initialize Interact.js Drag & Resize functionality on cards
+        if (typeof interact !== 'undefined') {
+            interact('.draggable-resizable-section')
+              .draggable({
+                  inertia: true,
+                  selector: '.form-title',
+                  modifiers: [
+                      interact.modifiers.restrictRect({
+                          restriction: 'parent',
+                          endOnly: true
+                      })
+                  ],
+                  listeners: {
+                      move: (event) => {
+                          const target = event.target;
+                          let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                          let y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                          target.style.transform = `translate(${x}px, ${y}px)`;
+                          target.setAttribute('data-x', x);
+                          target.setAttribute('data-y', y);
+                      }
+                  }
+              })
+              .resizable({
+                  edges: { left: true, right: true, bottom: true, top: true },
+                  modifiers: [
+                      interact.modifiers.restrictSize({
+                          min: { width: 280, height: 200 }
+                      })
+                  ],
+                  listeners: {
+                      move: (event) => {
+                          let target = event.target;
+                          let x = (parseFloat(target.getAttribute('data-x')) || 0);
+                          let y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+                          target.style.width = event.rect.width + 'px';
+                          target.style.height = event.rect.height + 'px';
+
+                          x += event.deltaRect.left;
+                          y += event.deltaRect.top;
+
+                          target.style.transform = `translate(${x}px, ${y}px)`;
+                          target.setAttribute('data-x', x);
+                          target.setAttribute('data-y', y);
+                      }
+                  }
+              });
+        }
+    });
+
+    document.querySelectorAll('.main-wrapper input, .main-wrapper select').forEach(el => {
+        el.addEventListener('input', () => {
+            activeReceiptDate = null;
+            updateReceipt();
+        });
+    });
+</script>
+
+<!-- Firebase Authentication & Database Script -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBMSn6BSvAJeUiACimff_4jm7WwnyhwV_A",
+        authDomain: "receipt-generator-5090a.firebaseapp.com",
+        projectId: "receipt-generator-5090a",
+        storageBucket: "receipt-generator-5090a.firebasestorage.app",
+        messagingSenderId: "375963217509",
+        appId: "1:375963217509:web:058a3636f32f5bf41be08c",
+        measurementId: "G-TP5TR2G53Q"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let unsubscribeSnapshot = null;
+
+    onAuthStateChanged(auth, (user) => {
+        const overlay = document.getElementById('loginOverlay');
+        const container = document.getElementById('appContainer');
+        const userDisplay = document.getElementById('userEmailDisplay');
+
+        if (user) {
+            overlay.style.display = 'none';
+            container.style.display = 'block';
+            userDisplay.innerText = user.email;
+            startRealtimeSync();
+        } else {
+            overlay.style.display = 'flex';
+            container.style.display = 'none';
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+        }
+    });
+
+    window.handleLogin = async function() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPassword').value.trim();
+        const errBox = document.getElementById('loginError');
+        errBox.style.display = 'none';
+
+        try {
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (error) {
+            errBox.innerText = "Login Failed: " + error.message;
+            errBox.style.display = 'block';
+        }
+    }
+
+    window.handleLogout = async function() {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Error signing out:", error);
+        }
+    }
+
+    window.saveRecord = async function() {
+        const curr = document.getElementById('currency').value;
+        const invoiceNo = document.getElementById('invoiceNo').value;
+        const receivedFrom = document.getElementById('receivedFrom').value;
+        const receivedTo = document.getElementById('receivedTo').value;
+        const description = document.getElementById('description').value;
+        const txType = document.getElementById('txType').value;
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const recordDate = activeReceiptDate || formatDate(new Date());
+
+        const record = {
+            date: recordDate,
+            invoiceNo: invoiceNo,
+            receivedFrom: receivedFrom,
+            receivedTo: receivedTo,
+            description: description,
+            txType: txType,
+            currency: curr.trim(),
+            amount: amount,
+            createdAt: Date.now(),
+            userEmail: auth.currentUser ? auth.currentUser.email : 'unknown'
+        };
+
+        try {
+            await addDoc(collection(db, "transactions"), record);
+            activeReceiptDate = null;
+            document.getElementById('invoiceNo').value = generateInvoiceNo();
+            updateReceipt();
+            alert('Transaction Saved Online & Synced Successfully!');
+        } catch (error) {
+            console.error("Error saving to cloud: ", error);
+            alert('Failed to save to cloud. Please check permissions.');
+        }
+    }
+
+    window.renderTable = function() {
+        const tbody = document.getElementById('historyBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (globalRecords.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d;">No saved records found in cloud database.</td></tr>';
+            return;
+        }
+
+        const searchVal = document.getElementById('filterSearch').value.toLowerCase().trim();
+        const txTypeVal = document.getElementById('filterTxType').value;
+        const currencyVal = document.getElementById('filterCurrency').value;
+        const dateFromVal = document.getElementById('filterDateFrom').value ? new Date(document.getElementById('filterDateFrom').value) : null;
+        const dateToVal = document.getElementById('filterDateTo').value ? new Date(document.getElementById('filterDateTo').value) : null;
+        if (dateToVal) dateToVal.setHours(23, 59, 59, 999);
+
+        let visibleCount = 0;
+
+        globalRecords.forEach((item, index) => {
+            const textMatch = !searchVal || 
+                (item.invoiceNo && item.invoiceNo.toString().toLowerCase().includes(searchVal)) ||
+                (item.receivedFrom && item.receivedFrom.toLowerCase().includes(searchVal)) ||
+                (item.receivedTo && item.receivedTo.toLowerCase().includes(searchVal)) ||
+                (item.description && item.description.toLowerCase().includes(searchVal));
+
+            const txMatch = !txTypeVal || item.txType === txTypeVal;
+            const currMatch = !currencyVal || (item.currency || '').trim() === currencyVal.trim();
+
+            const recDateObj = parseReceiptDate(item.date);
+            let dateMatch = true;
+            if (recDateObj) {
+                if (dateFromVal && recDateObj < dateFromVal) dateMatch = false;
+                if (dateToVal && recDateObj > dateToVal) dateMatch = false;
+            }
+
+            if (textMatch && txMatch && currMatch && dateMatch) {
+                visibleCount++;
+                const row = `<tr>
+                    <td>${item.date}</td>
+                    <td>${item.invoiceNo}</td>
+                    <td>${item.receivedFrom || '-'}</td>
+                    <td>${item.receivedTo || '-'}</td>
+                    <td>${item.description || '-'}</td>
+                    <td>${item.txType}</td>
+                    <td><strong>${item.currency} ${item.amount.toLocaleString()}</strong></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-view" onclick="viewReceiptByIndex(${index})">View / Print</button>
+                            <button class="btn-delete" onclick="deleteRecord('${item.id}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            }
+        });
+
+        if (visibleCount === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d;">No matching transaction records found.</td></tr>';
+        }
+    }
+
+    window.viewReceiptByIndex = function(index) {
+        const item = globalRecords[index];
+        if (!item) return;
+
+        const selectCurr = document.getElementById('currency');
+        const formattedCurr = item.currency.endsWith(' ') ? item.currency : item.currency + ' ';
+        selectCurr.value = formattedCurr;
+        
+        document.getElementById('invoiceNo').value = item.invoiceNo;
+        document.getElementById('receivedFrom').value = item.receivedFrom;
+        document.getElementById('receivedTo').value = item.receivedTo;
+        document.getElementById('description').value = item.description;
+        document.getElementById('txType').value = item.txType;
+        document.getElementById('amount').value = item.amount;
+        
+        activeReceiptDate = item.date;
+        updateReceipt();
+
+        document.getElementById('receipt').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.deleteRecord = async function(docId) {
+        if (!confirm('Are you sure you want to delete this record from the cloud?')) return;
+        try {
+            await deleteDoc(doc(db, "transactions", docId));
+            alert('Record deleted successfully from all devices.');
+        } catch (error) {
+            console.error("Error removing document: ", error);
+            alert('Failed to delete record.');
+        }
+    }
+
+    function startRealtimeSync() {
+        unsubscribeSnapshot = onSnapshot(collection(db, "transactions"), (snapshot) => {
+            globalRecords = [];
+            snapshot.forEach((docSnap) => {
+                globalRecords.push({ id: docSnap.id, ...docSnap.data() });
+            });
+
+            globalRecords.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+            renderTable();
+        }, (error) => {
+            console.error("Cloud sync error:", error);
+            const tbody = document.getElementById('historyBody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#e74c3c;">Cloud Connection Error. Please verify login or Firestore rules.</td></tr>';
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
