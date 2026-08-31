@@ -8,6 +8,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- html2canvas Library CDN for Screenshot Capture -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Interact.js Library CDN for Drag and Resize -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.28/interact.min.js"></script>
+    
     <style>
         :root {
             --brand-green: #2ecc71;
@@ -115,7 +118,8 @@
             margin: 25px auto 0 auto;
         }
 
-        .card {
+        /* Draggable & Resizable Interactive Elements Styles */
+        .card, .receipt-card-container {
             background: #ffffff;
             padding: 25px;
             border-radius: 12px;
@@ -124,6 +128,11 @@
             flex-direction: column;
             justify-content: space-between;
             box-sizing: border-box;
+            touch-action: none;
+            position: relative;
+            overflow: hidden;
+            min-width: 280px;
+            min-height: 200px;
         }
 
         .form-title {
@@ -136,6 +145,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: grab; /* Indicates sections are draggable by header */
+        }
+        .form-title:active {
+            cursor: grabbing;
         }
 
         .badge-dimension {
@@ -228,17 +241,6 @@
         .filter-grid .form-group { margin-bottom: 0; }
 
         /* Receipt Layout Container */
-        .receipt-card-container {
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            box-sizing: border-box;
-        }
-
         .receipt-card {
             background-color: #ffffff;
             border-radius: 12px;
@@ -532,7 +534,7 @@
 
     <div class="main-wrapper">
         <!-- Entry Form -->
-        <div class="card">
+        <div class="card draggable-resizable-section">
             <h2 class="form-title">Receipt Details Form</h2>
             
             <div class="form-group">
@@ -596,7 +598,7 @@
         </div>
 
         <!-- Output Receipt Card Container -->
-        <div class="receipt-card-container">
+        <div class="receipt-card-container draggable-resizable-section">
             <h2 class="form-title">
                 Output Preview
                 <span class="badge-dimension">1080x1920</span>
@@ -687,7 +689,7 @@
     </div>
 
     <div class="history-wrapper">
-        <div class="card">
+        <div class="card draggable-resizable-section">
             <button class="btn-export" onclick="exportToCSV()">Export Excel (CSV)</button>
             <h2 class="form-title">Cloud Transaction History (Synced Multi-Device)</h2>
 
@@ -840,7 +842,6 @@ Amount: ${curr}${amount.toLocaleString()}`;
         const receiptElement = document.getElementById('receipt');
         if (!receiptElement) return;
 
-        // FIXED: Added allowTaint: true to prevent security crashes with local files
         html2canvas(receiptElement, {
             scale: 3, 
             useCORS: true,
@@ -889,6 +890,58 @@ Amount: ${curr}${amount.toLocaleString()}`;
     window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('invoiceNo').value = generateInvoiceNo();
         updateReceipt();
+        
+        // Initialize Interact.js Drag & Resize functionality on cards
+        if (typeof interact !== 'undefined') {
+            interact('.draggable-resizable-section')
+              .draggable({
+                  inertia: true,
+                  // Allow dragging specifically by clicking the section header title
+                  selector: '.form-title',
+                  modifiers: [
+                      interact.modifiers.restrictRect({
+                          restriction: 'parent',
+                          endOnly: true
+                      })
+                  ],
+                  listeners: {
+                      move: (event) => {
+                          const target = event.target;
+                          let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                          let y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                          target.style.transform = `translate(${x}px, ${y}px)`;
+                          target.setAttribute('data-x', x);
+                          target.setAttribute('data-y', y);
+                      }
+                  }
+              })
+              .resizable({
+                  edges: { left: true, right: true, bottom: true, top: true },
+                  modifiers: [
+                      interact.modifiers.restrictSize({
+                          min: { width: 280, height: 200 }
+                      })
+                  ],
+                  listeners: {
+                      move: (event) => {
+                          let target = event.target;
+                          let x = (parseFloat(target.getAttribute('data-x')) || 0);
+                          let y = (parseFloat(target.getAttribute('data-y')) || 0);
+
+                          target.style.width = event.rect.width + 'px';
+                          target.style.height = event.rect.height + 'px';
+
+                          x += event.deltaRect.left;
+                          y += event.deltaRect.top;
+
+                          target.style.transform = `translate(${x}px, ${y}px)`;
+                          target.setAttribute('data-x', x);
+                          target.setAttribute('data-y', y);
+                      }
+                  }
+              });
+        }
     });
 
     document.querySelectorAll('.main-wrapper input, .main-wrapper select').forEach(el => {
