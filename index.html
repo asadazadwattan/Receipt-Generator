@@ -145,7 +145,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: grab; /* Indicates sections are draggable by header */
+            cursor: grab;
         }
         .form-title:active {
             cursor: grabbing;
@@ -412,7 +412,7 @@
             margin: 0 auto;
         }
 
-        #qrcode img {
+        #qrcode canvas, #qrcode img {
             display: block;
             margin: 0 auto;
             width: 80px;
@@ -844,6 +844,7 @@ Amount: ${curr}${amount.toLocaleString()}`;
 
         updateReceipt();
 
+        // Ensure qrcodejs has fully generated its DOM canvas/image element before rendering canvas snapshot
         setTimeout(() => {
             html2canvas(receiptElement, {
                 scale: 3, 
@@ -852,13 +853,34 @@ Amount: ${curr}${amount.toLocaleString()}`;
                 backgroundColor: "#ffffff",
                 logging: false,
                 onclone: (clonedDoc) => {
-                    const clonedCanvas = clonedDoc.querySelector('#qrcode canvas');
-                    const origCanvas = document.querySelector('#qrcode canvas');
-                    if (clonedCanvas && origCanvas) {
-                        const ctx = clonedCanvas.getContext('2d');
-                        clonedCanvas.width = origCanvas.width;
-                        clonedCanvas.height = origCanvas.height;
-                        ctx.drawImage(origCanvas, 0, 0);
+                    // Extract canvas or image from source document and force-draw it onto cloned document's QR container
+                    const origContainer = document.getElementById('qrcode');
+                    const clonedContainer = clonedDoc.getElementById('qrcode');
+                    if (origContainer && clonedContainer) {
+                        const origCanvas = origContainer.querySelector('canvas');
+                        const origImg = origContainer.querySelector('img');
+                        
+                        clonedContainer.innerHTML = '';
+                        if (origCanvas) {
+                            const newCanvas = clonedDoc.createElement('canvas');
+                            newCanvas.width = origCanvas.width;
+                            newCanvas.height = origCanvas.height;
+                            newCanvas.style.width = "80px";
+                            newCanvas.style.height = "80px";
+                            newCanvas.style.display = "block";
+                            newCanvas.style.margin = "0 auto";
+                            const ctx = newCanvas.getContext('2d');
+                            ctx.drawImage(origCanvas, 0, 0);
+                            clonedContainer.appendChild(newCanvas);
+                        } else if (origImg) {
+                            const newImg = clonedDoc.createElement('img');
+                            newImg.src = origImg.src;
+                            newImg.style.width = "80px";
+                            newImg.style.height = "80px";
+                            newImg.style.display = "block";
+                            newImg.style.margin = "0 auto";
+                            clonedContainer.appendChild(newImg);
+                        }
                     }
                 }
             }).then(canvas => {
@@ -870,7 +892,7 @@ Amount: ${curr}${amount.toLocaleString()}`;
                 console.error("Screenshot capture failed:", err);
                 alert("Failed to capture screenshot. Please try again.");
             });
-        }, 300);
+        }, 500);
     }
 
     function resetFilters() {
