@@ -842,17 +842,25 @@ Amount: ${curr}${amount.toLocaleString()}`;
         const receiptElement = document.getElementById('receipt');
         if (!receiptElement) return;
 
-        // Force update receipt and QR code prior to screenshot capture
         updateReceipt();
 
-        // Give a small delay to let the QR code completely paint before capturing
         setTimeout(() => {
             html2canvas(receiptElement, {
                 scale: 3, 
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: "#ffffff",
-                logging: false
+                logging: false,
+                onclone: (clonedDoc) => {
+                    const clonedCanvas = clonedDoc.querySelector('#qrcode canvas');
+                    const origCanvas = document.querySelector('#qrcode canvas');
+                    if (clonedCanvas && origCanvas) {
+                        const ctx = clonedCanvas.getContext('2d');
+                        clonedCanvas.width = origCanvas.width;
+                        clonedCanvas.height = origCanvas.height;
+                        ctx.drawImage(origCanvas, 0, 0);
+                    }
+                }
             }).then(canvas => {
                 const link = document.createElement('a');
                 link.download = `receipt_${document.getElementById('outInvoiceNo').innerText}.png`;
@@ -862,7 +870,7 @@ Amount: ${curr}${amount.toLocaleString()}`;
                 console.error("Screenshot capture failed:", err);
                 alert("Failed to capture screenshot. Please try again.");
             });
-        }, 150);
+        }, 300);
     }
 
     function resetFilters() {
