@@ -6,6 +6,8 @@
     <title>AZAD WATTAN - Secure Cloud Login & Receipt Generator</title>
     <!-- Standard Reliable QR Code Library CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- html2canvas Library CDN for Screenshot Capture -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --brand-green: #2ecc71;
@@ -105,7 +107,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 25px;
-            align-items: start;
+            align-items: stretch;
         }
 
         .history-wrapper {
@@ -118,6 +120,10 @@
             padding: 25px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
         }
 
         .form-title {
@@ -127,6 +133,18 @@
             border-bottom: 2px solid #f0f0f0;
             padding-bottom: 10px;
             margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge-dimension {
+            font-size: 11px;
+            background: #e1e8ed;
+            color: var(--text-dark);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
         }
 
         .form-group {
@@ -174,6 +192,9 @@
         .btn-save { background: #27ae60; color: white; }
         .btn-save:hover { background: #219653; }
 
+        .btn-screenshot { background: #8e44ad; color: white; }
+        .btn-screenshot:hover { background: #732d91; }
+
         .btn-export {
             background: #2980b9;
             color: white;
@@ -206,16 +227,30 @@
 
         .filter-grid .form-group { margin-bottom: 0; }
 
-        /* Receipt Layout */
+        /* Receipt Layout Container */
+        .receipt-card-container {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
         .receipt-card {
             background-color: #ffffff;
-            border-radius: 16px;
-            padding: 30px 25px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             border: 1px solid #e1e8ed;
             position: relative;
             overflow: hidden;
             text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0 auto;
         }
 
         .watermark-bg {
@@ -223,7 +258,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 250px;
+            width: 220px;
             height: auto;
             opacity: 0.08;
             pointer-events: none;
@@ -237,68 +272,105 @@
 
         .receipt-header {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .receipt-header .company-logo {
-            max-width: 80px;
-            max-height: 80px;
+            max-width: 65px;
+            max-height: 65px;
             height: auto;
             width: auto;
-            margin: 0 auto 8px auto;
+            margin: 0 auto 6px auto;
             display: block;
             object-fit: contain;
         }
 
         .company-name {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             color: var(--brand-dark);
             letter-spacing: 0.5px;
-            margin: 0 0 5px 0;
+            margin: 0 0 4px 0;
             text-transform: uppercase;
         }
 
-        .contact-details {
-            font-size: 11px;
+        .contact-details-footer {
+            font-size: 10px;
             color: var(--text-gray);
-            margin-bottom: 5px;
-            line-height: 1.4;
+            margin-top: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
 
-        .contact-details span {
-            display: inline-block;
-            margin: 0 4px;
+        .contact-info-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .contact-details-footer span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .contact-details-footer svg {
+            width: 12px;
+            height: 12px;
+            fill: var(--text-gray);
+            flex-shrink: 0;
+        }
+
+        .company-address {
+            font-size: 9.5px;
+            color: var(--text-gray);
+            text-align: center;
+            line-height: 1.25;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .company-address svg {
+            width: 12px;
+            height: 12px;
+            fill: var(--text-gray);
+            flex-shrink: 0;
         }
 
         .status-title {
             color: var(--brand-green);
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 500;
             text-align: center;
-            margin: 15px 0 15px 0;
+            margin: 10px 0;
         }
 
         .divider {
             border-top: 1px solid #7f8c8d;
             opacity: 0.4;
-            margin: 10px 0;
+            margin: 8px 0;
         }
 
         .receipt-header-title {
             text-align: center;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             color: #000;
-            margin: 12px 0 20px 0;
+            margin: 8px 0 12px 0;
         }
 
         .receipt-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
-            font-size: 15px;
+            margin-bottom: 7px;
+            font-size: 13px;
         }
 
         .receipt-row .label { color: var(--text-gray); }
@@ -309,40 +381,40 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 15px;
-            padding-top: 10px;
-            font-size: 18px;
+            margin-top: 10px;
+            padding-top: 6px;
+            font-size: 15px;
             font-weight: bold;
             color: #000;
         }
 
         .qr-wrapper {
             text-align: center;
-            margin-top: 25px;
-            padding-top: 15px;
+            margin-top: 12px;
+            padding-top: 10px;
             border-top: 1px dashed #cbd5e0;
         }
 
         .qr-container {
             display: inline-block;
-            width: 110px;
-            height: 110px;
+            width: 85px;
+            height: 85px;
             background: #ffffff;
-            padding: 5px;
+            padding: 3px;
             border-radius: 4px;
         }
 
         #qrcode {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             margin: 0 auto;
         }
 
         #qrcode img {
             display: block;
             margin: 0 auto;
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
         }
 
         table.history-table {
@@ -405,30 +477,28 @@
         }
 
         @media print {
-            body { background: #ffffff; padding: 0; margin: 0; }
-            body * { visibility: hidden; }
-            .top-bar, #loginOverlay, .main-wrapper, .history-wrapper, .card { box-shadow: none !important; padding: 0 !important; margin: 0 !important; display: none !important; }
-            #receipt, #receipt * { visibility: visible; }
+            body { background: #ffffff !important; padding: 0 !important; margin: 0 !important; }
+            body * { visibility: hidden !important; }
+            #receipt, #receipt * { visibility: visible !important; }
             #receipt {
                 display: block !important;
-                position: fixed;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%) scale(0.95);
-                transform-origin: center center;
-                width: 420px;
-                max-width: 90%;
-                box-shadow: none;
-                border: 1px solid #dcdde1;
-                border-radius: 16px;
-                page-break-inside: avoid;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                position: absolute !important;
+                left: 50% !important;
+                top: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                width: 420px !important;
+                max-width: 100% !important;
+                box-shadow: none !important;
+                border: 1px solid #dcdde1 !important;
+                border-radius: 12px !important;
+                background-color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
             .watermark-bg {
                 opacity: 0.08 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
         }
     </style>
@@ -516,14 +586,21 @@
                 <input type="number" id="amount" value="8614">
             </div>
 
-            <div class="btn-group">
-                <button class="btn-save" onclick="saveRecord()">Save Record (Cloud Sync)</button>
-                <button class="btn-primary" onclick="window.print()">Print Receipt</button>
+            <div class="btn-group" style="flex-direction: column;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-save" onclick="saveRecord()">Save Record</button>
+                    <button class="btn-primary" onclick="window.print()">Print Receipt</button>
+                </div>
+                <button class="btn-screenshot" onclick="captureReceiptScreenshot()">Capture Screenshot (1080x1920)</button>
             </div>
         </div>
 
-        <!-- Output Receipt Card -->
-        <div>
+        <!-- Output Receipt Card Container -->
+        <div class="receipt-card-container">
+            <h2 class="form-title">
+                Output Preview
+                <span class="badge-dimension">1080x1920</span>
+            </h2>
             <div class="receipt-card" id="receipt">
                 <img src="AZAD_WATTAN_LOGO.png" alt="Watermark" class="watermark-bg">
 
@@ -531,9 +608,6 @@
                     <div class="receipt-header">
                         <img src="AZAD_WATTAN_LOGO.png" alt="AZAD WATTAN Logo" class="company-logo">
                         <div class="company-name">AZAD WATTAN GENERAL TRADING CO.</div>
-                        <div class="contact-details">
-                            <span>WhatsApp: 0320-8888688</span> | <span>Email: azadwattan2023@gmail.com</span>
-                        </div>
                     </div>
 
                     <h3 class="status-title">Transaction Successful</h3>
@@ -587,6 +661,24 @@
                     <div class="qr-wrapper">
                         <div class="qr-container">
                             <div id="qrcode"></div>
+                        </div>
+                        <div class="contact-details-footer">
+                            <div class="contact-info-row">
+                                <span>
+                                    <!-- WhatsApp Icon -->
+                                    <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448c-.63.345-6.195 3.396-6.195 3.396zm6.591-3.847c1.637.973 3.535 1.488 5.467 1.488 5.828 0 10.575-4.747 10.578-10.577.002-2.825-1.098-5.482-3.097-7.483-1.999-2.001-4.656-3.1-7.482-3.101-5.83 0-10.577 4.747-10.58 10.578-.001 1.997.521 3.939 1.517 5.641l-1.018 3.722 3.635-1.066zm10.741-7.986c-.294-.147-1.742-.86-2.012-.958-.27-.098-.466-.147-.663.147-.197.294-.764.958-.937 1.157-.173.199-.347.222-.641.074-.294-.147-1.24-.457-2.363-1.458-.873-.779-1.462-1.741-1.635-2.035-.173-.294-.018-.453.129-.6.132-.133.294-.347.441-.521.147-.174.196-.294.294-.49.098-.196.049-.368-.025-.515-.074-.147-.663-1.597-.909-2.186-.239-.578-.483-.5-.663-.51-.171-.009-.368-.009-.565-.009-.197 0-.515.074-.785.368-.27.294-1.033 1.009-1.033 2.461 0 1.452 1.059 2.856 1.206 3.053.147.197 2.083 3.181 5.044 4.461.705.304 1.253.486 1.682.622.711.226 1.359.194 1.869.118.573-.085 1.742-.712 1.988-1.399.246-.688.246-1.277.172-1.399-.074-.122-.27-.196-.564-.343z"/></svg>
+                                +92 320 8888688
+                            </span>
+                            <span>
+                                <!-- Email Icon -->
+                                <svg viewBox="0 0 24 24"><path d="M12 12.713l-11.985-9.713h23.97l-11.985 9.713zm0 2.574l-12-9.725v15.438h24v-15.438l-12 9.725z"/></svg>
+                                azadwattan2023@gmail.com
+                            </span>
+                        </div>
+                        <div class="company-address">
+                            <!-- Location Icon -->
+                            <svg viewBox="0 0 24 24"><path d="M12 0c-4.198 0-8 3.803-8 8 0 5.192 7.03 14.853 7.322 15.258.376.517 1.001.517 1.377 0 .292-.405 7.301-10.066 7.301-15.258 0-4.197-3.802-8-8-8zm0 11c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"/></svg>
+                            OFF#502, 5TH FLOOR, TASNEEM PLAZA, NEAR JANS BAKER, 6-SADDAR ROAD, PESHAWAR CANTT, PESHAWAR.
                         </div>
                     </div>
                 </div>
@@ -697,8 +789,8 @@
         if (typeof QRCode !== 'undefined') {
             new QRCode(container, {
                 text: text,
-                width: 100,
-                height: 100,
+                width: 80,
+                height: 80,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
@@ -742,6 +834,27 @@ Amount: ${curr}${amount.toLocaleString()}`;
         } catch (err) {
             console.error("Error updating receipt preview:", err);
         }
+    }
+
+    function captureReceiptScreenshot() {
+        const receiptElement = document.getElementById('receipt');
+        if (!receiptElement) return;
+
+        // FIXED: Added allowTaint: true to prevent security crashes with local files
+        html2canvas(receiptElement, {
+            scale: 3, 
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#ffffff"
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `receipt_${document.getElementById('outInvoiceNo').innerText}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }).catch(err => {
+            console.error("Screenshot capture failed:", err);
+            alert("Failed to capture screenshot. Please try again.");
+        });
     }
 
     function resetFilters() {
@@ -808,23 +921,20 @@ Amount: ${curr}${amount.toLocaleString()}`;
 
     let unsubscribeSnapshot = null;
 
-    // Listen to login state changes automatically
     onAuthStateChanged(auth, (user) => {
         const overlay = document.getElementById('loginOverlay');
         const container = document.getElementById('appContainer');
         const userDisplay = document.getElementById('userEmailDisplay');
 
         if (user) {
-            // User is signed in
             overlay.style.display = 'none';
             container.style.display = 'block';
             userDisplay.innerText = user.email;
             startRealtimeSync();
         } else {
-            // User is signed out
             overlay.style.display = 'flex';
             container.style.display = 'none';
-            if (unsubscribeSnapshot) unsubscribeSnapshot(); // Stop listening when logged out
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
         }
     });
 
