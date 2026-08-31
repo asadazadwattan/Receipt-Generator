@@ -789,14 +789,40 @@
         if (!container) return;
         container.innerHTML = '';
         if (typeof QRCode !== 'undefined') {
-            new QRCode(container, {
+            const tempDiv = document.createElement('div');
+            new QRCode(tempDiv, {
                 text: text,
                 width: 80,
                 height: 80,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
+                correctLevel: QRCode.CorrectLevel.M
             });
+            setTimeout(() => {
+                const canvas = tempDiv.querySelector('canvas');
+                const img = tempDiv.querySelector('img');
+                container.innerHTML = '';
+                if (canvas) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const imageTag = document.createElement('img');
+                    imageTag.src = dataUrl;
+                    imageTag.style.width = "80px";
+                    imageTag.style.height = "80px";
+                    imageTag.style.display = "block";
+                    imageTag.style.margin = "0 auto";
+                    container.appendChild(imageTag);
+                } else if (img) {
+                    const imageTag = document.createElement('img');
+                    imageTag.src = img.src;
+                    imageTag.style.width = "80px";
+                    imageTag.style.height = "80px";
+                    imageTag.style.display = "block";
+                    imageTag.style.margin = "0 auto";
+                    container.appendChild(imageTag);
+                } else {
+                    container.appendChild(tempDiv);
+                }
+            }, 60);
         }
     }
 
@@ -844,7 +870,6 @@ Amount: ${curr}${amount.toLocaleString()}`;
 
         updateReceipt();
 
-        // Ensure qrcodejs has fully generated its DOM canvas/image element before rendering canvas snapshot
         setTimeout(() => {
             html2canvas(receiptElement, {
                 scale: 3, 
@@ -853,28 +878,24 @@ Amount: ${curr}${amount.toLocaleString()}`;
                 backgroundColor: "#ffffff",
                 logging: false,
                 onclone: (clonedDoc) => {
-                    // Extract canvas or image from source document and force-draw it onto cloned document's QR container
                     const origContainer = document.getElementById('qrcode');
                     const clonedContainer = clonedDoc.getElementById('qrcode');
                     if (origContainer && clonedContainer) {
-                        const origCanvas = origContainer.querySelector('canvas');
                         const origImg = origContainer.querySelector('img');
+                        const origCanvas = origContainer.querySelector('canvas');
                         
                         clonedContainer.innerHTML = '';
-                        if (origCanvas) {
-                            const newCanvas = clonedDoc.createElement('canvas');
-                            newCanvas.width = origCanvas.width;
-                            newCanvas.height = origCanvas.height;
-                            newCanvas.style.width = "80px";
-                            newCanvas.style.height = "80px";
-                            newCanvas.style.display = "block";
-                            newCanvas.style.margin = "0 auto";
-                            const ctx = newCanvas.getContext('2d');
-                            ctx.drawImage(origCanvas, 0, 0);
-                            clonedContainer.appendChild(newCanvas);
-                        } else if (origImg) {
+                        if (origImg) {
                             const newImg = clonedDoc.createElement('img');
                             newImg.src = origImg.src;
+                            newImg.style.width = "80px";
+                            newImg.style.height = "80px";
+                            newImg.style.display = "block";
+                            newImg.style.margin = "0 auto";
+                            clonedContainer.appendChild(newImg);
+                        } else if (origCanvas) {
+                            const newImg = clonedDoc.createElement('img');
+                            newImg.src = origCanvas.toDataURL('image/png');
                             newImg.style.width = "80px";
                             newImg.style.height = "80px";
                             newImg.style.display = "block";
@@ -892,7 +913,7 @@ Amount: ${curr}${amount.toLocaleString()}`;
                 console.error("Screenshot capture failed:", err);
                 alert("Failed to capture screenshot. Please try again.");
             });
-        }, 500);
+        }, 600);
     }
 
     function resetFilters() {
@@ -928,7 +949,6 @@ Amount: ${curr}${amount.toLocaleString()}`;
         document.getElementById('invoiceNo').value = generateInvoiceNo();
         updateReceipt();
         
-        // Initialize Interact.js Drag & Resize functionality on cards
         if (typeof interact !== 'undefined') {
             interact('.draggable-resizable-section')
               .draggable({
