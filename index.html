@@ -3,40 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval';">
-    <title>AZAD WATTAN - Secure Cloud Login & Receipt Generator</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval';">
+    <title>AZAD WATTAN - 3D Cloud Receipt Studio & Management</title>
     
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Cinzel:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <!-- CDNs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/interact.js/1.10.28/interact.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
     <style>
         :root {
             --brand-green: #2ecc71;
+            --brand-emerald: #059669;
             --brand-dark: #1e4d3b;
             --text-orange: #e67e22;
             --text-gray: #7f8c8d;
             --text-dark: #2c3e50;
-            --bg-body: #ecefe6;
+            --bg-page: #e8ede9;
+
+            /* 3D Shadows */
+            --shadow-3d-card: 
+                0 20px 35px -10px rgba(30, 77, 59, 0.14),
+                0 1px 3px rgba(0, 0, 0, 0.05),
+                inset 0 1px 1px rgba(255, 255, 255, 0.9),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.04);
+            
+            --shadow-3d-paper: 
+                0 20px 45px -10px rgba(0, 0, 0, 0.16),
+                0 6px 15px -4px rgba(0, 0, 0, 0.08),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-body);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at top right, #f4f7f4 0%, #e6eee8 50%, #d8e5dc 100%);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             color: var(--text-dark);
+            min-height: 100vh;
         }
 
-        /* Login Overlay */
+        /* 3D Login Overlay */
         #loginOverlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(30, 77, 59, 0.94);
+            background: radial-gradient(circle at center, rgba(30, 77, 59, 0.96) 0%, rgba(15, 45, 34, 0.99) 100%);
+            backdrop-filter: blur(10px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -44,117 +72,254 @@
         }
 
         .login-card {
-            background: #ffffff;
-            padding: 35px;
-            border-radius: 14px;
+            background: linear-gradient(145deg, #ffffff, #f9fafb);
+            padding: 38px 32px;
+            border-radius: 20px;
             width: 100%;
-            max-width: 380px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 390px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.8) inset;
             text-align: center;
         }
 
+        .login-card .brand-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #1e4d3b, #2b6b53);
+            color: #f1c40f;
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(30, 77, 59, 0.3);
+            margin-bottom: 14px;
+        }
+
         .login-card h2 {
+            font-family: 'Outfit', sans-serif;
             color: var(--brand-dark);
-            margin-top: 0;
-            margin-bottom: 8px;
-            font-size: 22px;
+            margin: 0 0 6px 0;
+            font-size: 24px;
+            font-weight: 800;
         }
 
         .login-card p {
             color: var(--text-gray);
             font-size: 13px;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
         }
 
         .app-container {
             display: none;
+            max-width: 1280px;
+            margin: 0 auto;
         }
 
+        /* 3D Top Header Bar */
         .top-bar {
-            max-width: 950px;
-            margin: 0 auto 20px auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #ffffff;
-            padding: 12px 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            padding: 14px 24px;
+            border-radius: 18px;
+            box-shadow: var(--shadow-3d-card);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            margin-bottom: 22px;
         }
 
-        .user-info {
-            font-size: 13px;
-            color: var(--text-gray);
+        .brand-badge-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
         }
 
-        .user-info strong {
+        .brand-icon-3d {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #2ecc71 0%, #1e4d3b 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 20px;
+            box-shadow: 0 4px 0 #143528, 0 8px 15px rgba(30, 77, 59, 0.3);
+        }
+
+        .brand-title-wrap h1 {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
             color: var(--brand-dark);
+            letter-spacing: -0.3px;
         }
 
-        .btn-logout {
-            background: #e74c3c;
-            color: white;
-            padding: 6px 12px;
-            width: auto;
-            font-size: 12px;
-            border-radius: 4px;
+        .brand-title-wrap span {
+            font-size: 11px;
+            font-weight: 600;
+            color: #059669;
+            background: #d1fae5;
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-dark);
+            border: 1px solid #e2e8f0;
+        }
+
+        /* 3D Tactile Buttons */
+        .btn-3d {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13.5px;
+            font-weight: 700;
+            padding: 10px 16px;
+            border-radius: 10px;
             cursor: pointer;
             border: none;
-            font-weight: bold;
-        }
-        .btn-logout:hover { background: #c0392b; }
-
-        .main-wrapper {
-            max-width: 950px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            align-items: stretch;
-        }
-
-        .history-wrapper {
-            max-width: 950px;
-            margin: 25px auto 0 auto;
-        }
-
-        .card, .receipt-card-container {
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-sizing: border-box;
-            touch-action: none;
+            outline: none;
+            transition: all 0.15s ease;
             position: relative;
-            overflow: hidden;
-            min-width: 280px;
-            min-height: 200px;
+            user-select: none;
         }
 
-        .form-title {
-            margin-top: 0;
-            color: var(--brand-dark);
+        .btn-3d:active {
+            transform: translateY(3px) !important;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.2) !important;
+        }
+
+        .btn-settings {
+            background: linear-gradient(135deg, #ffffff, #e2e8f0);
+            color: #334155;
+            box-shadow: 0 3px 0 #94a3b8, 0 5px 10px rgba(0,0,0,0.06);
+            border: 1px solid #cbd5e1;
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+        .btn-settings:hover { background: #f1f5f9; transform: translateY(-1px); }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 3px 0 #962d22, 0 5px 10px rgba(231, 76, 60, 0.3);
+            padding: 8px 14px;
+            font-size: 13px;
+        }
+        .btn-logout:hover { background: #c0392b; transform: translateY(-1px); }
+
+        /* 3D Metric Overview Cards */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card-3d {
+            background: linear-gradient(145deg, #ffffff, #f9fafb);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: var(--shadow-3d-card);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 18px;
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+        .stat-icon.green { background: #d1fae5; color: #059669; }
+        .stat-icon.blue { background: #dbeafe; color: #2563eb; }
+        .stat-icon.amber { background: #fef3c7; color: #d97706; }
+
+        .stat-info .label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-gray);
+        }
+        .stat-info .val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--brand-dark);
+            line-height: 1.1;
+        }
+
+        /* Main Workspace 2-Column Grid */
+        .main-wrapper {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 25px;
+            align-items: start;
+        }
+
+        /* 3D Form Container */
+        .card-3d {
+            background: linear-gradient(145deg, #ffffff 0%, #fafcfb 100%);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: var(--shadow-3d-card);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .card-header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: grab;
+            padding-bottom: 14px;
+            margin-bottom: 18px;
+            border-bottom: 2px solid #f1f5f9;
         }
-        .form-title:active { cursor: grabbing; }
 
-        .badge-dimension {
-            font-size: 11px;
-            background: #e1e8ed;
-            color: var(--text-dark);
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: 600;
+        .card-header-row h2 {
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            font-size: 19px;
+            font-weight: 800;
+            color: var(--brand-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
 
         .form-group {
@@ -164,104 +329,134 @@
 
         label {
             display: block;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 4px;
-            font-size: 13px;
-            color: var(--text-gray);
+            font-size: 12px;
+            color: #475569;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #dcdde1;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        button {
-            border: none;
-            padding: 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            width: 100%;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        .btn-primary { background: var(--brand-dark); color: white; }
-        .btn-primary:hover { background: #143528; }
-
-        .btn-save { background: #27ae60; color: white; }
-        .btn-save:hover { background: #219653; }
-
-        .btn-screenshot { background: #8e44ad; color: white; }
-        .btn-screenshot:hover { background: #732d91; }
-
-        .btn-export {
-            background: #2980b9;
-            color: white;
-            padding: 8px 15px;
-            width: auto;
-            float: right;
-            margin-bottom: 15px;
-        }
-        .btn-export:hover { background: #1c5980; }
-
-        .btn-reset {
-            background: #95a5a6;
-            color: white;
-            padding: 10px;
-            font-size: 13px;
-        }
-        .btn-reset:hover { background: #7f8c8d; }
-
-        .filter-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            background: #f8f9fa;
-            padding: 15px;
+            padding: 9px 12px;
+            border: 1.5px solid #cbd5e1;
             border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #e1e8ed;
-            text-align: left;
+            font-size: 13.5px;
+            font-family: inherit;
+            color: var(--text-dark);
+            background: #ffffff;
+            transition: all 0.2s ease;
         }
 
-        .filter-grid .form-group { margin-bottom: 0; }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #2ecc71;
+            box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+        }
 
-        /* Receipt Styling */
+        /* 3D Action Buttons Grid */
+        .actions-btn-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn-save-3d {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+            box-shadow: 0 4px 0 #196f3d, 0 6px 12px rgba(39, 174, 96, 0.3);
+        }
+        .btn-save-3d:hover { background: #219653; transform: translateY(-1px); }
+
+        .btn-print-3d {
+            background: linear-gradient(135deg, #1e4d3b, #15382b);
+            color: white;
+            box-shadow: 0 4px 0 #0d241c, 0 6px 12px rgba(30, 77, 59, 0.35);
+        }
+        .btn-print-3d:hover { background: #15382b; transform: translateY(-1px); }
+
+        .btn-whatsapp-3d {
+            background: linear-gradient(135deg, #25d366, #128c7e);
+            color: white;
+            box-shadow: 0 4px 0 #075e54, 0 6px 12px rgba(37, 211, 102, 0.35);
+        }
+        .btn-whatsapp-3d:hover { background: #1ebe5d; transform: translateY(-1px); }
+
+        .btn-shot-3d {
+            background: linear-gradient(135deg, #8e44ad, #732d91);
+            color: white;
+            box-shadow: 0 4px 0 #5b2474, 0 6px 12px rgba(142, 68, 173, 0.35);
+        }
+        .btn-shot-3d:hover { background: #732d91; transform: translateY(-1px); }
+
+        /* Template Selector Bar */
+        .template-selector-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            border: 1px solid #e1e8ed;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .template-selector-card label {
+            margin: 0;
+            font-size: 12.5px;
+            color: var(--brand-dark);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .template-selector-card select {
+            font-weight: 700;
+            color: var(--brand-dark);
+            background: #f8fafc;
+        }
+
+        /* ================================================================ */
+        /* EXACT RECEIPT TEMPLATE (MATCHING UPLOADED PICTURE)               */
+        /* ================================================================ */
+        .preview-sticky-wrap {
+            position: sticky;
+            top: 24px;
+        }
+
         .receipt-card {
             background-color: #ffffff;
             border-radius: 12px;
             padding: 24px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow-3d-paper);
             border: 1px solid #e1e8ed;
             position: relative;
             overflow: hidden;
             text-align: left;
             width: 100%;
+            max-width: 440px;
             box-sizing: border-box;
             margin: 0 auto;
+            transition: all 0.3s ease;
         }
 
+        /* Mathematically Centered Watermark without CSS3 transforms */
         .watermark-bg {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: auto;
             width: 220px;
-            height: auto;
+            height: 220px;
             opacity: 0.08;
             pointer-events: none;
             z-index: 0;
+            object-fit: contain;
         }
 
         .receipt-content {
@@ -291,6 +486,123 @@
             letter-spacing: 0.5px;
             margin: 0 0 4px 0;
             text-transform: uppercase;
+        }
+
+        .status-title {
+            color: var(--brand-green);
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .divider {
+            border-top: 1px solid #7f8c8d;
+            opacity: 0.4;
+            margin: 8px 0;
+        }
+
+        .receipt-header-title {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #000000;
+            margin: 8px 0 12px 0;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 7px;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .receipt-row .label {
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .receipt-row .value {
+            color: var(--text-dark);
+            font-weight: 500;
+            text-align: right;
+            word-break: break-word;
+            max-width: 60%;
+        }
+
+        .receipt-row.highlight .label,
+        .receipt-row.highlight .value {
+            color: var(--text-orange);
+            font-weight: bold;
+        }
+
+        .total-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #000000;
+        }
+
+        .amount-words-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 6px;
+            font-size: 11.5px;
+            font-style: italic;
+            border-top: 1px dotted #e2e8f0;
+            padding-top: 5px;
+        }
+
+        .amount-words-row .label {
+            color: var(--text-gray);
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        .amount-words-row .value {
+            color: var(--brand-dark);
+            font-weight: 600;
+            text-align: right;
+            max-width: 75%;
+            word-break: break-word;
+        }
+
+        /* Scannable QR Code Styling - Exact 77px (70%) */
+        .qr-wrapper {
+            text-align: center;
+            margin-top: 14px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e0;
+        }
+
+        .qr-container {
+            display: inline-block;
+            background: #ffffff;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #e1e8ed;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        #qrcode {
+            width: 77px;
+            height: 77px;
+            margin: 0 auto;
+        }
+
+        #qrcode img, #qrcode canvas {
+            width: 77px !important;
+            height: 77px !important;
+            display: block;
+            margin: 0 auto;
+            image-rendering: pixelated;
         }
 
         .contact-details-footer {
@@ -336,272 +648,725 @@
             margin-top: 4px;
         }
 
-        .status-title {
-            color: var(--brand-green);
-            font-size: 18px;
-            font-weight: 500;
-            text-align: center;
-            margin: 10px 0;
-        }
+        /* ================================================================ */
+        /* 10 STYLING THEMES FOR RECEIPT TEMPLATES                          */
+        /* ================================================================ */
+        
+        /* 1. Classic (Default - Exactly like photo) */
+        .template-classic {}
 
-        .divider {
-            border-top: 1px solid #7f8c8d;
-            opacity: 0.4;
-            margin: 8px 0;
-        }
-
-        .receipt-header-title {
-            text-align: center;
-            font-size: 16px;
-            font-weight: bold;
-            color: #000;
-            margin: 8px 0 12px 0;
-        }
-
-        .receipt-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 7px;
-            font-size: 13px;
-        }
-
-        .receipt-row .label { color: var(--text-gray); }
-        .receipt-row .value { color: var(--text-dark); font-weight: 500; text-align: right; word-break: break-word; max-width: 60%; }
-        .receipt-row.highlight .label, .receipt-row.highlight .value { color: var(--text-orange); font-weight: bold; }
-
-        .total-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-            padding-top: 6px;
-            font-size: 15px;
-            font-weight: bold;
-            color: #000;
-        }
-
-        /* Scannable QR Code Styling - Resized to 70% (77px) */
-        .qr-wrapper {
-            text-align: center;
-            margin-top: 14px;
-            padding-top: 10px;
-            border-top: 1px dashed #cbd5e0;
-        }
-
-        .qr-container {
-            display: inline-block;
+        /* 2. Emerald & Gold Executive */
+        .template-emerald {
+            border: 2px solid #059669;
             background: #ffffff;
-            padding: 6px;
-            border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.15);
+        }
+        .template-emerald .receipt-header {
+            background: linear-gradient(135deg, #0f392b, #059669);
+            margin: -24px -24px 15px -24px;
+            padding: 20px;
+            color: white;
+            border-bottom: 3px solid #f59e0b;
+        }
+        .template-emerald .company-name { color: #ffffff; }
+        .template-emerald .status-title { color: #f59e0b; }
+        .template-emerald .receipt-row.highlight .label,
+        .template-emerald .receipt-row.highlight .value { color: #059669; font-weight: 800; }
+        .template-emerald .total-section { background: #ecfdf5; padding: 10px; border-radius: 8px; color: #065f46; }
+
+        /* 3. Minimalist Thermal POS */
+        .template-thermal {
+            font-family: 'JetBrains Mono', monospace !important;
+            border: 1px dashed #94a3b8;
+            box-shadow: none;
+            background: #fff;
+            padding: 18px;
+        }
+        .template-thermal .status-title { color: #000; font-weight: 700; text-transform: uppercase; font-size: 15px; }
+        .template-thermal .divider { border-top: 1px dashed #000; opacity: 1; }
+        .template-thermal .receipt-row.highlight .label,
+        .template-thermal .receipt-row.highlight .value { color: #000; }
+        .template-thermal .qr-wrapper { border-top: 1px dashed #000; }
+
+        /* 4. Corporate Slate & Navy */
+        .template-slate {
+            border-top: 6px solid #1e3a8a;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(30, 58, 138, 0.1);
+        }
+        .template-slate .company-name { color: #1e3a8a; }
+        .template-slate .status-title { color: #2563eb; }
+        .template-slate .receipt-row.highlight .label,
+        .template-slate .receipt-row.highlight .value { color: #1e3a8a; }
+        .template-slate .total-section { border-top: 2px solid #1e3a8a; border-bottom: 2px solid #1e3a8a; padding: 8px 0; }
+
+        /* 5. Modern Dark Mode */
+        .template-dark {
+            background-color: #0f172a !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+        }
+        .template-dark .company-name { color: #38bdf8 !important; }
+        .template-dark .status-title { color: #4ade80 !important; }
+        .template-dark .receipt-header-title { color: #ffffff !important; }
+        .template-dark .receipt-row .label { color: #94a3b8 !important; }
+        .template-dark .receipt-row .value { color: #f8fafc !important; }
+        .template-dark .receipt-row.highlight .label,
+        .template-dark .receipt-row.highlight .value { color: #fb923c !important; }
+        .template-dark .total-section { color: #ffffff !important; border-top: 1px solid #334155; }
+        .template-dark .amount-words-row .label { color: #94a3b8 !important; }
+        .template-dark .amount-words-row .value { color: #38bdf8 !important; }
+        .template-dark .contact-details-footer, .template-dark .company-address { color: #94a3b8 !important; }
+        .template-dark svg { fill: #94a3b8 !important; }
+
+        /* 6. Vintage Heritage Parchment */
+        .template-parchment {
+            background-color: #faf6eb !important;
+            border: 3px double #b45309;
+            font-family: 'Cinzel', serif !important;
+        }
+        .template-parchment .company-name { color: #78350f; font-weight: 800; }
+        .template-parchment .status-title { color: #92400e; font-weight: 700; }
+        .template-parchment .receipt-row.highlight .label,
+        .template-parchment .receipt-row.highlight .value { color: #b45309; }
+
+        /* 7. Luxury Black & Gold Foil */
+        .template-luxury {
+            background: linear-gradient(145deg, #18181b, #09090b) !important;
+            color: #fef08a !important;
+            border: 2px solid #eab308 !important;
+            box-shadow: 0 15px 35px rgba(234, 179, 8, 0.2);
+        }
+        .template-luxury .company-name { color: #fde047 !important; }
+        .template-luxury .status-title { color: #fbbf24 !important; }
+        .template-luxury .receipt-header-title { color: #ffffff !important; }
+        .template-luxury .receipt-row .label { color: #a1a1aa !important; }
+        .template-luxury .receipt-row .value { color: #fef9c3 !important; }
+        .template-luxury .receipt-row.highlight .label,
+        .template-luxury .receipt-row.highlight .value { color: #eab308 !important; }
+        .template-luxury .total-section { color: #fef08a !important; border-top: 1px dashed #eab308; }
+        .template-luxury .amount-words-row .label { color: #a1a1aa !important; }
+        .template-luxury .amount-words-row .value { color: #fde047 !important; }
+        .template-luxury .contact-details-footer, .template-luxury .company-address { color: #a1a1aa !important; }
+        .template-luxury svg { fill: #eab308 !important; }
+
+        /* 8. Clean Sky Corporate */
+        .template-sky {
+            border: 1px solid #7dd3fc;
+            box-shadow: 0 10px 25px rgba(2, 132, 199, 0.1);
+        }
+        .template-sky .company-name { color: #0284c7; }
+        .template-sky .status-title { color: #0369a1; }
+        .template-sky .receipt-row.highlight .label,
+        .template-sky .receipt-row.highlight .value { color: #0284c7; }
+        .template-sky .total-section { background: #f0f9ff; padding: 8px 12px; border-radius: 6px; }
+
+        /* 9. Crimson Express Clearance */
+        .template-crimson {
+            border-top: 6px solid #dc2626;
+            border-bottom: 6px solid #dc2626;
+        }
+        .template-crimson .company-name { color: #991b1b; }
+        .template-crimson .status-title { color: #dc2626; font-weight: 700; text-transform: uppercase; }
+        .template-crimson .receipt-row.highlight .label,
+        .template-crimson .receipt-row.highlight .value { color: #dc2626; }
+        .template-crimson .total-section { color: #991b1b; }
+
+        /* 10. Official Customs & Trade Certificate */
+        .template-customs {
+            border: 4px solid #1e4d3b;
+            padding: 26px;
+            position: relative;
+        }
+        .template-customs::after {
+            content: "OFFICIAL SEAL - AZAD WATTAN";
+            position: absolute;
+            bottom: 6px;
+            right: 12px;
+            font-size: 8px;
+            color: #1e4d3b;
+            font-weight: 800;
+            opacity: 0.5;
+            letter-spacing: 1px;
+        }
+
+        /* ================================================================ */
+        /* STUNNING 1080x1920 HD DIGITAL RECEIPT STYLES                     */
+        /* ================================================================ */
+        .hd-1080-stage {
+            width: 1080px;
+            height: 1920px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            padding: 50px;
+            background: #ffffff;
+        }
+
+        .hd-1080-card {
+            width: 980px !important;
+            max-width: 980px !important;
+            min-height: 1720px !important;
+            padding: 60px 55px !important;
+            border-radius: 28px !important;
+            border: 2px solid #e1e8ed !important;
+            box-shadow: none !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            position: relative !important;
+            overflow: hidden !important;
+            background-color: #ffffff !important;
+        }
+
+        .hd-1080-card .company-logo {
+            max-width: 120px !important;
+            max-height: 120px !important;
+            margin-bottom: 12px !important;
+        }
+
+        .hd-1080-card .company-name {
+            font-size: 26px !important;
+            margin-bottom: 8px !important;
+            letter-spacing: 0.8px !important;
+        }
+
+        .hd-1080-card .status-title {
+            font-size: 32px !important;
+            margin: 14px 0 !important;
+        }
+
+        .hd-1080-card .receipt-header-title {
+            font-size: 28px !important;
+            margin: 16px 0 22px 0 !important;
+        }
+
+        .hd-1080-card .receipt-row {
+            font-size: 22px !important;
+            margin-bottom: 14px !important;
+            line-height: 1.4 !important;
+        }
+
+        .hd-1080-card .total-section {
+            font-size: 28px !important;
+            margin-top: 18px !important;
+            padding-top: 12px !important;
+        }
+
+        .hd-1080-card .amount-words-row {
+            font-size: 20px !important;
+            margin-top: 10px !important;
+            padding-top: 8px !important;
+        }
+
+        .hd-1080-card .qr-wrapper {
+            margin-top: 24px !important;
+            padding-top: 18px !important;
+        }
+
+        .hd-1080-card .qr-container {
+            padding: 12px !important;
+            border-radius: 12px !important;
+        }
+
+        .hd-1080-card #qrcode {
+            width: 200px !important;
+            height: 200px !important;
+        }
+
+        .hd-1080-card #qrcode img, .hd-1080-card #qrcode canvas {
+            width: 200px !important;
+            height: 200px !important;
+        }
+
+        .hd-1080-card .contact-details-footer {
+            font-size: 17px !important;
+            margin-top: 20px !important;
+            gap: 8px !important;
+        }
+
+        .hd-1080-card .contact-details-footer svg,
+        .hd-1080-card .company-address svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+
+        .hd-1080-card .company-address {
+            font-size: 15px !important;
+            margin-top: 10px !important;
+        }
+
+        .hd-1080-card .watermark-bg {
+            width: 480px !important;
+            height: 480px !important;
+        }
+
+        /* ================================================================ */
+        /* TRANSACTION HISTORY TABLE                                        */
+        /* ================================================================ */
+        .history-wrapper {
+            margin-top: 28px;
+        }
+
+        .filter-grid-3d {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
             border: 1px solid #e1e8ed;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
 
-        #qrcode {
-            width: 77px;
-            height: 77px;
-            margin: 0 auto;
-        }
-
-        #qrcode img, #qrcode canvas {
-            width: 77px !important;
-            height: 77px !important;
-            display: block;
-            margin: 0 auto;
-            image-rendering: pixelated;
+        .history-table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid #e1e8ed;
         }
 
         table.history-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
             font-size: 13px;
+            background: #ffffff;
             text-align: left;
         }
 
-        table.history-table th, table.history-table td {
-            padding: 10px;
+        table.history-table th {
+            background: #f8f9fa;
+            color: var(--brand-dark);
+            padding: 12px;
+            font-weight: 700;
+            border-bottom: 2px solid #e1e8ed;
+        }
+
+        table.history-table td {
+            padding: 10px 12px;
             border-bottom: 1px solid #e1e8ed;
         }
 
-        table.history-table th {
-            background-color: #f8f9fa;
-            color: var(--brand-dark);
-        }
+        table.history-table tr:hover { background: #f8fafc; }
 
         .action-btns {
             display: flex;
-            gap: 5px;
+            gap: 6px;
         }
 
-        .btn-view {
+        .btn-mini-view {
             background: #3498db;
             color: white;
             border: none;
             padding: 5px 9px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 11.5px;
             font-weight: bold;
         }
-        .btn-view:hover { background: #2980b9; }
+        .btn-mini-view:hover { background: #2980b9; }
 
-        .btn-delete {
+        .btn-mini-del {
             background: #e74c3c;
             color: white;
             border: none;
             padding: 5px 9px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 11.5px;
             font-weight: bold;
         }
-        .btn-delete:hover { background: #c0392b; }
+        .btn-mini-del:hover { background: #c0392b; }
 
-        #loginError {
-            color: #e74c3c;
-            font-size: 13px;
-            margin-top: 10px;
+        /* ================================================================ */
+        /* MODALS (SETTINGS & WHATSAPP)                                     */
+        /* ================================================================ */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 45, 34, 0.75);
+            backdrop-filter: blur(8px);
             display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 20px;
         }
 
+        .modal-card-3d {
+            background: #ffffff;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 580px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.4);
+            border: 1px solid #e2e8f0;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1.5px solid #f1f5f9;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-family: 'Outfit', sans-serif;
+            font-size: 19px;
+            color: var(--brand-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-close-modal {
+            background: #f1f5f9;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-close-modal:hover { background: #fee2e2; color: #ef4444; }
+
+        .modal-body {
+            padding: 20px 24px;
+        }
+
+        .modal-footer {
+            padding: 14px 24px;
+            border-top: 1.5px solid #f1f5f9;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* ================================================================ */
+        /* PERFECT PRINT ENGINE (1 PAGE, WATERMARK CENTERED, ZERO OVERFLOW) */
+        /* ================================================================ */
         @page {
             size: A4 portrait;
             margin: 10mm;
         }
 
         @media print {
-            body { background: #ffffff !important; padding: 0 !important; margin: 0 !important; }
-            body * { visibility: hidden !important; }
-            #receipt, #receipt * { visibility: visible !important; }
+            html, body {
+                width: 100% !important;
+                height: auto !important;
+                min-height: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                overflow: visible !important;
+            }
+
+            /* Hide all web UI from paper print */
+            #loginOverlay,
+            .top-bar,
+            .analytics-grid,
+            .form-column-container,
+            .history-wrapper,
+            .modal-backdrop,
+            .template-selector-card,
+            .actions-btn-bar,
+            #hdExportStage {
+                display: none !important;
+            }
+
+            .app-container {
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                max-width: none !important;
+            }
+
+            .main-wrapper {
+                display: block !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .preview-sticky-wrap {
+                position: static !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
             #receipt {
                 display: block !important;
-                position: absolute !important;
-                left: 50% !important;
-                top: 50% !important;
-                transform: translate(-50%, -50%) !important;
+                position: relative !important;
+                overflow: hidden !important;
+                margin: 10mm auto !important;
                 width: 440px !important;
                 max-width: 100% !important;
                 box-shadow: none !important;
                 border: 1px solid #dcdde1 !important;
                 border-radius: 12px !important;
                 background-color: #ffffff !important;
+                page-break-before: avoid !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            .watermark-bg {
+
+            /* Watermark precisely centered without CSS3 transform */
+            #receipt .watermark-bg {
+                position: absolute !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                margin: auto !important;
+                width: 220px !important;
+                height: 220px !important;
+                transform: none !important;
                 opacity: 0.08 !important;
+                pointer-events: none !important;
+                z-index: 0 !important;
+                object-fit: contain !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 860px) {
+            body { padding: 12px; }
+            .main-wrapper { grid-template-columns: 1fr; }
+            .top-bar { flex-direction: column; gap: 12px; text-align: center; }
+            .preview-sticky-wrap { position: static; }
+            .form-grid-2 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
+<!-- 3D Login Overlay -->
 <div id="loginOverlay">
     <div class="login-card">
+        <div class="brand-pill">
+            <i class="fa-solid fa-shield-halved"></i> Secure Cloud Portal
+        </div>
         <h2>AZAD WATTAN</h2>
         <p>Sign in with your secure account</p>
+        
         <div class="form-group">
             <label for="loginEmail">Email Address</label>
             <input type="email" id="loginEmail" placeholder="admin@azadwattan.com" autocomplete="email">
         </div>
+        
         <div class="form-group">
             <label for="loginPassword">Password</label>
             <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
         </div>
-        <div id="loginError"></div>
-        <button class="btn-primary" style="margin-top: 15px;" onclick="handleLogin()">Login to Cloud</button>
+        
+        <div id="loginError" style="color: #e74c3c; font-size: 13px; margin-bottom: 12px; display: none; font-weight: 600;"></div>
+        
+        <button class="btn-3d btn-save-3d" style="width: 100%; margin-top: 10px; padding: 12px;" onclick="handleLogin()">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Login to Cloud
+        </button>
     </div>
 </div>
 
+<!-- Main App Container -->
 <div class="app-container" id="appContainer">
+
+    <!-- 3D Top Header Navigation Bar -->
     <div class="top-bar">
-        <div class="user-info">Logged in as: <strong id="userEmailDisplay">--</strong></div>
-        <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
-    </div>
-
-    <div class="main-wrapper">
-        <div class="card draggable-resizable-section">
-            <h2 class="form-title">Receipt Details Form</h2>
-            
-            <div class="form-group">
-                <label for="currency">Currency</label>
-                <select id="currency">
-                    <option value="Rs. ">PKR (Rs.)</option>
-                    <option value="AFN ">AFN (؋)</option>
-                    <option value="$">$ (USD)</option>
-                    <option value="AED ">AED (Dirham)</option>
-                    <option value="SAR ">SAR (Riyal)</option>
-                    <option value="€">EUR (€)</option>
-                    <option value="£">GBP (£)</option>
-                </select>
+        <div class="brand-badge-group">
+            <div class="brand-icon-3d">
+                <i class="fa-solid fa-receipt"></i>
             </div>
-
-            <div class="form-group">
-                <label for="invoiceNo">Invoice No.</label>
-                <input type="text" id="invoiceNo" maxlength="30">
-            </div>
-
-            <div class="form-group">
-                <label for="receivedFrom">Received From</label>
-                <input type="text" id="receivedFrom" placeholder="Customer / Client Name" maxlength="60">
-            </div>
-
-            <div class="form-group">
-                <label for="receivedTo">Received To</label>
-                <input type="text" id="receivedTo" value="AZAD WATTAN GENERAL TRADING CO." maxlength="60">
-            </div>
-
-            <div class="form-group">
-                <label for="description">Description</label>
-                <input type="text" id="description" placeholder="Goods / Services Description" maxlength="100">
-            </div>
-
-            <div class="form-group">
-                <label for="txType">Transaction Type</label>
-                <select id="txType">
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cheque">Cheque</option>
-                    <option value="Credit Card">Credit Card</option>
-                    <option value="Bill Payment">Bill Payment</option>
-                    <option value="Hawala">Hawala</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="amount">Amount</label>
-                <input type="number" id="amount" value="8614" min="0" step="any">
-            </div>
-
-            <div class="btn-group" style="flex-direction: column;">
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-save" onclick="saveRecord()">Save Record</button>
-                    <button class="btn-primary" onclick="window.print()">Print Receipt</button>
-                </div>
-                <button class="btn-screenshot" onclick="captureReceiptScreenshot()">Capture Screenshot (1080x1920)</button>
+            <div class="brand-title-wrap">
+                <h1 id="topbarCompany">AZAD WATTAN GENERAL TRADING CO.</h1>
+                <span><i class="fa-solid fa-cloud-arrow-up"></i> Multi-Device Cloud Sync</span>
             </div>
         </div>
 
-        <div class="receipt-card-container draggable-resizable-section">
-            <h2 class="form-title">
-                Output Preview
-                <span class="badge-dimension">1080x1920</span>
-            </h2>
-            <div class="receipt-card" id="receipt">
+        <div class="top-actions">
+            <div class="user-pill">
+                <i class="fa-solid fa-user-circle"></i>
+                <span id="userEmailDisplay">--</span>
+            </div>
+
+            <button class="btn-3d btn-settings" onclick="openSettingsModal()" title="Settings">
+                <i class="fa-solid fa-gear"></i> Settings
+            </button>
+
+            <button class="btn-3d btn-logout" onclick="handleLogout()" title="Sign Out">
+                <i class="fa-solid fa-power-off"></i> Sign Out
+            </button>
+        </div>
+    </div>
+
+    <!-- 3D Analytics Bar -->
+    <div class="analytics-grid">
+        <div class="stat-card-3d">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Today's Total</div>
+                <div class="val" id="statTodayTotal">Rs. 0</div>
+            </div>
+        </div>
+
+        <div class="stat-card-3d">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Cloud Receipts</div>
+                <div class="val" id="statTotalCount">0</div>
+            </div>
+        </div>
+
+        <div class="stat-card-3d">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div class="stat-info">
+                <div class="label">Operating Currency</div>
+                <div class="val" id="statActiveCurrency">PKR (Rs.)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="main-wrapper">
+        
+        <!-- LEFT: Receipt Input Form -->
+        <div class="card-3d form-column-container">
+            <div class="card-header-row">
+                <h2><i class="fa-solid fa-sliders"></i> Receipt Details Form</h2>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="currency"><i class="fa-solid fa-money-bill-wave"></i> Currency</label>
+                    <select id="currency">
+                        <option value="Rs. ">PKR (Rs.)</option>
+                        <option value="AFN ">AFN (؋)</option>
+                        <option value="$">$ (USD)</option>
+                        <option value="AED ">AED (Dirham)</option>
+                        <option value="SAR ">SAR (Riyal)</option>
+                        <option value="€">EUR (€)</option>
+                        <option value="£">GBP (£)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="invoiceNo"><i class="fa-solid fa-barcode"></i> Invoice No.</label>
+                    <div style="display:flex; gap:6px;">
+                        <input type="text" id="invoiceNo" maxlength="30">
+                        <button type="button" onclick="regenerateInvoiceNo()" title="Generate New Invoice Number" style="width:auto; padding:0 12px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; cursor:pointer;">
+                            <i class="fa-solid fa-rotate"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="receivedFrom"><i class="fa-solid fa-user"></i> Received From</label>
+                    <input type="text" id="receivedFrom" placeholder="Customer / Client Name" maxlength="60">
+                </div>
+
+                <div class="form-group">
+                    <label for="receivedTo"><i class="fa-solid fa-building"></i> Received To</label>
+                    <input type="text" id="receivedTo" value="AZAD WATTAN GENERAL TRADING CO." maxlength="60">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="description"><i class="fa-solid fa-comment-dots"></i> Description</label>
+                <input type="text" id="description" placeholder="Goods / Services Description" maxlength="100">
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="txType"><i class="fa-solid fa-credit-card"></i> Transaction Type</label>
+                    <select id="txType">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Cheque">Cheque</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Bill Payment">Bill Payment</option>
+                        <option value="Hawala">Hawala</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount"><i class="fa-solid fa-coins"></i> Amount</label>
+                    <input type="number" id="amount" value="8614" min="0" step="any">
+                </div>
+            </div>
+
+            <!-- Action Buttons Grid -->
+            <div class="actions-btn-bar">
+                <button class="btn-3d btn-save-3d" onclick="saveRecord()">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Save Record
+                </button>
+                <button class="btn-3d btn-print-3d" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> Print Receipt
+                </button>
+                <button class="btn-3d btn-whatsapp-3d" onclick="openWhatsAppModal()">
+                    <i class="fa-brands fa-whatsapp"></i> Share WhatsApp
+                </button>
+                <button class="btn-3d btn-shot-3d" onclick="captureReceiptScreenshot()">
+                    <i class="fa-solid fa-camera"></i> Download HD (1080x1920)
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT: Preview & 10 Templates -->
+        <div class="preview-sticky-wrap">
+            
+            <!-- 10 Template Selector Dropdown -->
+            <div class="template-selector-card">
+                <label for="templateSelect"><i class="fa-solid fa-palette"></i> Template Design:</label>
+                <select id="templateSelect" onchange="changeReceiptTemplate(this.value)">
+                    <option value="classic" selected>1. Azad Wattan Classic (Original Photo)</option>
+                    <option value="emerald">2. Emerald & Gold Executive</option>
+                    <option value="thermal">3. Minimalist Thermal POS</option>
+                    <option value="slate">4. Corporate Slate & Navy</option>
+                    <option value="dark">5. Modern Dark Mode</option>
+                    <option value="parchment">6. Vintage Heritage Parchment</option>
+                    <option value="luxury">7. Luxury Black & Gold Foil</option>
+                    <option value="sky">8. Clean Sky Corporate</option>
+                    <option value="crimson">9. Crimson Express Clearance</option>
+                    <option value="customs">10. Official Customs & Trade Certificate</option>
+                </select>
+            </div>
+
+            <!-- EXACT RECEIPT COMPONENT (MATCHING PHOTO) -->
+            <div class="receipt-card template-classic" id="receipt">
                 <img src="AZAD_WATTAN_LOGO.png" alt="Watermark" class="watermark-bg" id="watermarkImg">
 
                 <div class="receipt-content">
                     <div class="receipt-header">
                         <img src="AZAD_WATTAN_LOGO.png" alt="AZAD WATTAN Logo" class="company-logo" id="headerLogo">
-                        <div class="company-name">AZAD WATTAN GENERAL TRADING CO.</div>
+                        <div class="company-name" id="previewCompanyName">AZAD WATTAN GENERAL TRADING CO.</div>
                     </div>
 
-                    <h3 class="status-title">Transaction Successful</h3>
+                    <h3 class="status-title" id="previewStatusTitle">Transaction Successful</h3>
                     
                     <div class="divider"></div>
 
@@ -649,6 +1414,13 @@
                         <span id="outTotal">Rs. 0</span>
                     </div>
 
+                    <!-- Amount in Words -->
+                    <div class="amount-words-row" id="amountWordsRow">
+                        <span class="label">In Words:</span>
+                        <span class="value" id="outAmountWords">Rupees Eight Thousand Six Hundred Fourteen Only</span>
+                    </div>
+
+                    <!-- Scannable QR Code Styling - 77px (70%) -->
                     <div class="qr-wrapper">
                         <div class="qr-container">
                             <div id="qrcode"></div>
@@ -657,35 +1429,42 @@
                             <div class="contact-info-row">
                                 <span>
                                     <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448c-.63.345-6.195 3.396-6.195 3.396zm6.591-3.847c1.637.973 3.535 1.488 5.467 1.488 5.828 0 10.575-4.747 10.578-10.577.002-2.825-1.098-5.482-3.097-7.483-1.999-2.001-4.656-3.1-7.482-3.101-5.83 0-10.577 4.747-10.58 10.578-.001 1.997.521 3.939 1.517 5.641l-1.018 3.722 3.635-1.066zm10.741-7.986c-.294-.147-1.742-.86-2.012-.958-.27-.098-.466-.147-.663.147-.197.294-.764.958-.937 1.157-.173.199-.347.222-.641.074-.294-.147-1.24-.457-2.363-1.458-.873-.779-1.462-1.741-1.635-2.035-.173-.294-.018-.453.129-.6.132-.133.294-.347.441-.521.147-.174.196-.294.294-.49.098-.196.049-.368-.025-.515-.074-.147-.663-1.597-.909-2.186-.239-.578-.483-.5-.663-.51-.171-.009-.368-.009-.565-.009-.197 0-.515.074-.785.368-.27.294-1.033 1.009-1.033 2.461 0 1.452 1.059 2.856 1.206 3.053.147.197 2.083 3.181 5.044 4.461.705.304 1.253.486 1.682.622.711.226 1.359.194 1.869.118.573-.085 1.742-.712 1.988-1.399.246-.688.246-1.277.172-1.399-.074-.122-.27-.196-.564-.343z"/></svg>
-                                +92 320 8888688
-                            </span>
-                            <span>
-                                <svg viewBox="0 0 24 24"><path d="M12 12.713l-11.985-9.713h23.97l-11.985 9.713zm0 2.574l-12-9.725v15.438h24v-15.438l-12 9.725z"/></svg>
-                                azadwattan2023@gmail.com
-                            </span>
-                        </div>
-                        <div class="company-address">
-                            <svg viewBox="0 0 24 24"><path d="M12 0c-4.198 0-8 3.803-8 8 0 5.192 7.03 14.853 7.322 15.258.376.517 1.001.517 1.377 0 .292-.405 7.301-10.066 7.301-15.258 0-4.197-3.802-8-8-8zm0 11c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"/></svg>
-                            OFF#502, 5TH FLOOR, TASNEEM PLAZA, NEAR JANS BAKER, 6-SADDAR ROAD, PESHAWAR CANTT, PESHAWAR.
+                                    <span id="previewFooterPhone">+92 320 8888688</span>
+                                </span>
+                                <span>
+                                    <svg viewBox="0 0 24 24"><path d="M12 12.713l-11.985-9.713h23.97l-11.985 9.713zm0 2.574l-12-9.725v15.438h24v-15.438l-12 9.725z"/></svg>
+                                    <span id="previewFooterEmail">azadwattan2023@gmail.com</span>
+                                </span>
+                            </div>
+                            <div class="company-address">
+                                <svg viewBox="0 0 24 24"><path d="M12 0c-4.198 0-8 3.803-8 8 0 5.192 7.03 14.853 7.322 15.258.376.517 1.001.517 1.377 0 .292-.405 7.301-10.066 7.301-15.258 0-4.197-3.802-8-8-8zm0 11c-1.657 0-3-1.343-3-3s1.343-3 3-3 3 1.343 3 3-1.343 3-3 3z"/></svg>
+                                <span id="previewFooterAddress">OFF#502, 5TH FLOOR, TASNEEM PLAZA, NEAR JANS BAKER, 6-SADDAR ROAD, PESHAWAR CANTT, PESHAWAR.</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 
+    <!-- LOWER SECTION: Cloud Transaction History -->
     <div class="history-wrapper">
-        <div class="card draggable-resizable-section">
-            <button class="btn-export" onclick="exportToCSV()">Export Excel (CSV)</button>
-            <h2 class="form-title">Cloud Transaction History (Synced Multi-Device)</h2>
+        <div class="card-3d">
+            <div class="card-header-row">
+                <h2><i class="fa-solid fa-cloud"></i> Cloud Transaction History (Synced Multi-Device)</h2>
+                <button class="btn-3d btn-settings" onclick="exportToCSV()">
+                    <i class="fa-solid fa-file-excel"></i> Export Excel (CSV)
+                </button>
+            </div>
 
-            <div class="filter-grid">
-                <div class="form-group">
-                    <label for="filterSearch">Search Keyword</label>
+            <div class="filter-grid-3d">
+                <div class="form-group" style="margin:0;">
+                    <label for="filterSearch"><i class="fa-solid fa-magnifying-glass"></i> Search</label>
                     <input type="text" id="filterSearch" placeholder="Invoice, Name, Desc..." oninput="renderTable()">
                 </div>
-                <div class="form-group">
-                    <label for="filterTxType">Transaction Type</label>
+                <div class="form-group" style="margin:0;">
+                    <label for="filterTxType"><i class="fa-solid fa-filter"></i> Transaction Type</label>
                     <select id="filterTxType" onchange="renderTable()">
                         <option value="">All Types</option>
                         <option value="Cash">Cash</option>
@@ -697,8 +1476,8 @@
                         <option value="Other">Other</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="filterCurrency">Currency</label>
+                <div class="form-group" style="margin:0;">
+                    <label for="filterCurrency"><i class="fa-solid fa-coins"></i> Currency</label>
                     <select id="filterCurrency" onchange="renderTable()">
                         <option value="">All Currencies</option>
                         <option value="Rs.">PKR (Rs.)</option>
@@ -710,20 +1489,22 @@
                         <option value="£">GBP (£)</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="filterDateFrom">From Date</label>
+                <div class="form-group" style="margin:0;">
+                    <label for="filterDateFrom"><i class="fa-regular fa-calendar-minus"></i> From Date</label>
                     <input type="date" id="filterDateFrom" onchange="renderTable()">
                 </div>
-                <div class="form-group">
-                    <label for="filterDateTo">To Date</label>
+                <div class="form-group" style="margin:0;">
+                    <label for="filterDateTo"><i class="fa-regular fa-calendar-plus"></i> To Date</label>
                     <input type="date" id="filterDateTo" onchange="renderTable()">
                 </div>
-                <div class="form-group" style="display: flex; align-items: flex-end;">
-                    <button class="btn-reset" onclick="resetFilters()">Reset Filters</button>
+                <div class="form-group" style="margin:0; display:flex; align-items:flex-end;">
+                    <button class="btn-3d btn-settings" style="width:100%;" onclick="resetFilters()">
+                        <i class="fa-solid fa-arrow-rotate-left"></i> Reset
+                    </button>
                 </div>
             </div>
 
-            <div style="overflow-x: auto;">
+            <div class="history-table-wrapper">
                 <table class="history-table">
                     <thead>
                         <tr>
@@ -738,17 +1519,285 @@
                         </tr>
                     </thead>
                     <tbody id="historyBody">
-                        <tr><td colspan="8" style="text-align:center; color:#7f8c8d;">Connecting to Cloud Database...</td></tr>
+                        <tr><td colspan="8" style="text-align:center; color:#7f8c8d; padding:20px;">Connecting to Cloud Database...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
+</div>
+
+<!-- =================================================================== -->
+<!-- WHATSAPP SHARING MODAL DIALOG                                       -->
+<!-- =================================================================== -->
+<div class="modal-backdrop" id="whatsappModal">
+    <div class="modal-card-3d" style="max-width: 480px;">
+        <div class="modal-header">
+            <h3><i class="fa-brands fa-whatsapp" style="color:#25d366; font-size:24px;"></i> Share Receipt via WhatsApp</h3>
+            <button class="btn-close-modal" onclick="closeWhatsAppModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="waPhoneInput"><i class="fa-solid fa-mobile-screen"></i> Recipient Mobile / WhatsApp Number</label>
+                <div style="display:flex; gap:8px;">
+                    <select id="waCountryCode" style="width: 120px;">
+                        <option value="92" selected>🇵🇰 +92</option>
+                        <option value="93">🇦🇫 +93</option>
+                        <option value="971">🇦🇪 +971</option>
+                        <option value="966">🇸🇦 +966</option>
+                        <option value="1">🇺🇸 +1</option>
+                        <option value="44">🇬🇧 +44</option>
+                        <option value="90">🇹🇷 +90</option>
+                    </select>
+                    <input type="tel" id="waPhoneInput" placeholder="3208888688" style="flex:1;">
+                </div>
+                <small style="color:#7f8c8d; margin-top:4px; display:block;">Enter without leading zero. (Leave empty to choose any contact in WhatsApp)</small>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fa-solid fa-receipt"></i> Formatted Receipt Message</label>
+                <textarea id="waMessagePreview" rows="8" readonly style="font-size:12.5px; font-family:monospace; background:#f8fafc; resize:none;"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button class="btn-3d btn-settings" onclick="copyWhatsAppMessage()">
+                <i class="fa-solid fa-copy"></i> Copy Text
+            </button>
+            <button class="btn-3d btn-whatsapp-3d" onclick="launchWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> Send on WhatsApp
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- SYSTEM & BRANDING SETTINGS MODAL DIALOG                             -->
+<!-- =================================================================== -->
+<div class="modal-backdrop" id="settingsModal">
+    <div class="modal-card-3d">
+        <div class="modal-header">
+            <h3><i class="fa-solid fa-gear"></i> System & Company Settings</h3>
+            <button class="btn-close-modal" onclick="closeSettingsModal()">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="setCompanyName">Company Name</label>
+                <input type="text" id="setCompanyName" value="AZAD WATTAN GENERAL TRADING CO.">
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="setCompanyPhone">WhatsApp / Phone Contact</label>
+                    <input type="text" id="setCompanyPhone" value="+92 320 8888688">
+                </div>
+                <div class="form-group">
+                    <label for="setCompanyEmail">Company Email</label>
+                    <input type="email" id="setCompanyEmail" value="azadwattan2023@gmail.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="setCompanyAddress">Business Address</label>
+                <textarea id="setCompanyAddress" rows="2">OFF#502, 5TH FLOOR, TASNEEM PLAZA, NEAR JANS BAKER, 6-SADDAR ROAD, PESHAWAR CANTT, PESHAWAR.</textarea>
+            </div>
+
+            <!-- Amount in Words Setting -->
+            <div class="form-group">
+                <label for="setAmountWordsToggle"><i class="fa-solid fa-spell-check"></i> Amount in Words</label>
+                <select id="setAmountWordsToggle">
+                    <option value="true" selected>Show Amount in Words on Receipt</option>
+                    <option value="false">Hide Amount in Words</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="logoFileInput">Custom Logo (PNG / JPG)</label>
+                <input type="file" id="logoFileInput" accept="image/*" onchange="handleLogoUpload(this)">
+                <small style="color:#7f8c8d;">Upload your custom transparent logo (saved in your browser storage).</small>
+            </div>
+
+            <div class="form-group">
+                <label for="setWatermarkToggle">Watermark Visibility</label>
+                <select id="setWatermarkToggle">
+                    <option value="true" selected>Show Watermark on Receipt</option>
+                    <option value="false">Hide Watermark</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-3d btn-settings" onclick="resetDefaultSettings()">Reset Defaults</button>
+            <button class="btn-3d btn-save-3d" onclick="saveSettings()">Save & Apply</button>
+        </div>
+    </div>
 </div>
 
 <script>
+    // Global State
     let activeReceiptDate = null;
     let globalRecords = [];
+
+    // System Settings with LocalStorage persistence
+    const defaultSettings = {
+        companyName: "AZAD WATTAN GENERAL TRADING CO.",
+        phone: "+92 320 8888688",
+        email: "azadwattan2023@gmail.com",
+        address: "OFF#502, 5TH FLOOR, TASNEEM PLAZA, NEAR JANS BAKER, 6-SADDAR ROAD, PESHAWAR CANTT, PESHAWAR.",
+        customLogo: null,
+        watermark: true,
+        showWords: true,
+        selectedTemplate: "classic"
+    };
+
+    let userSettings = { ...defaultSettings };
+
+    // Number to Words Converter with Currency Awareness
+    function getCurrencyName(currCode) {
+        currCode = (currCode || '').trim();
+        if (currCode.includes('Rs') || currCode === 'PKR') return 'Rupees';
+        if (currCode.includes('AFN') || currCode.includes('؋')) return 'Afghani';
+        if (currCode.includes('$')) return 'US Dollars';
+        if (currCode.includes('AED')) return 'UAE Dirhams';
+        if (currCode.includes('SAR')) return 'Saudi Riyals';
+        if (currCode.includes('€')) return 'Euros';
+        if (currCode.includes('£')) return 'British Pounds';
+        return 'Rupees';
+    }
+
+    function numberToWords(num, currencyName = 'Rupees') {
+        if (isNaN(num) || num === 0) return (currencyName ? currencyName + ' ' : '') + 'Zero Only';
+        const a = ['','One ','Two ','Three ','Four ','Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+        const b = ['', '', 'Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+
+        function convert(n) {
+            if (n === 0) return '';
+            if (n < 20) return a[n];
+            if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : ' ');
+            if (n < 1000) return a[Math.floor(n / 100)] + 'Hundred ' + (n % 100 !== 0 ? convert(n % 100) : '');
+            if (n < 100000) return convert(Math.floor(n / 1000)) + 'Thousand ' + (n % 1000 !== 0 ? convert(n % 1000) : '');
+            if (n < 10000000) return convert(Math.floor(n / 100000)) + 'Lakh ' + (n % 100000 !== 0 ? convert(n % 100000) : '');
+            return convert(Math.floor(n / 10000000)) + 'Crore ' + (n % 10000000 !== 0 ? convert(n % 10000000) : '');
+        }
+
+        const intPart = Math.floor(Math.abs(num));
+        const words = convert(intPart).trim();
+        return (currencyName ? currencyName + ' ' : '') + words + ' Only';
+    }
+
+    function loadSavedSettings() {
+        try {
+            const saved = localStorage.getItem('azad_wattan_receipt_settings');
+            if (saved) {
+                userSettings = { ...defaultSettings, ...JSON.parse(saved) };
+            }
+        } catch (e) {
+            console.error("Failed to load settings:", e);
+        }
+        applySettingsToUI();
+    }
+
+    function applySettingsToUI() {
+        document.getElementById('topbarCompany').innerText = userSettings.companyName;
+        document.getElementById('previewCompanyName').innerText = userSettings.companyName;
+        document.getElementById('receivedTo').value = userSettings.companyName;
+        document.getElementById('previewFooterPhone').innerText = userSettings.phone;
+        document.getElementById('previewFooterEmail').innerText = userSettings.email;
+        document.getElementById('previewFooterAddress').innerText = userSettings.address;
+
+        const headerLogo = document.getElementById('headerLogo');
+        const watermarkImg = document.getElementById('watermarkImg');
+
+        if (userSettings.customLogo) {
+            headerLogo.src = userSettings.customLogo;
+            watermarkImg.src = userSettings.customLogo;
+        } else {
+            headerLogo.src = "AZAD_WATTAN_LOGO.png";
+            watermarkImg.src = "AZAD_WATTAN_LOGO.png";
+        }
+
+        watermarkImg.style.display = userSettings.watermark ? 'block' : 'none';
+
+        // Amount in words visibility
+        const wordsRow = document.getElementById('amountWordsRow');
+        if (wordsRow) {
+            wordsRow.style.display = userSettings.showWords ? 'flex' : 'none';
+        }
+
+        if (userSettings.selectedTemplate) {
+            document.getElementById('templateSelect').value = userSettings.selectedTemplate;
+            applyTemplateClass(userSettings.selectedTemplate);
+        }
+
+        // Populate modal inputs
+        document.getElementById('setCompanyName').value = userSettings.companyName;
+        document.getElementById('setCompanyPhone').value = userSettings.phone;
+        document.getElementById('setCompanyEmail').value = userSettings.email;
+        document.getElementById('setCompanyAddress').value = userSettings.address;
+        document.getElementById('setWatermarkToggle').value = userSettings.watermark ? 'true' : 'false';
+        document.getElementById('setAmountWordsToggle').value = userSettings.showWords ? 'true' : 'false';
+    }
+
+    function openSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+
+    function closeSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    function handleLogoUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                userSettings.customLogo = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function saveSettings() {
+        userSettings.companyName = document.getElementById('setCompanyName').value.trim() || defaultSettings.companyName;
+        userSettings.phone = document.getElementById('setCompanyPhone').value.trim() || defaultSettings.phone;
+        userSettings.email = document.getElementById('setCompanyEmail').value.trim() || defaultSettings.email;
+        userSettings.address = document.getElementById('setCompanyAddress').value.trim() || defaultSettings.address;
+        userSettings.watermark = document.getElementById('setWatermarkToggle').value === 'true';
+        userSettings.showWords = document.getElementById('setAmountWordsToggle').value === 'true';
+
+        try {
+            localStorage.setItem('azad_wattan_receipt_settings', JSON.stringify(userSettings));
+        } catch (e) {
+            console.warn("Storage quota:", e);
+        }
+
+        applySettingsToUI();
+        updateReceipt();
+        closeSettingsModal();
+    }
+
+    function resetDefaultSettings() {
+        if (!confirm("Reset all settings back to default AZAD WATTAN values?")) return;
+        userSettings = { ...defaultSettings };
+        localStorage.removeItem('azad_wattan_receipt_settings');
+        applySettingsToUI();
+        updateReceipt();
+        closeSettingsModal();
+    }
+
+    // 10 Templates Switching Function
+    function changeReceiptTemplate(tmplName) {
+        userSettings.selectedTemplate = tmplName;
+        applyTemplateClass(tmplName);
+        try {
+            localStorage.setItem('azad_wattan_receipt_settings', JSON.stringify(userSettings));
+        } catch (e) {}
+    }
+
+    function applyTemplateClass(tmplName) {
+        const receipt = document.getElementById('receipt');
+        receipt.className = 'receipt-card template-' + tmplName;
+    }
 
     function escapeHtml(str) {
         if (!str) return '';
@@ -762,6 +1811,11 @@
 
     function generateInvoiceNo() {
         return Math.floor(100000000000 + Math.random() * 900000000000).toString();
+    }
+
+    function regenerateInvoiceNo() {
+        document.getElementById('invoiceNo').value = generateInvoiceNo();
+        updateReceipt();
     }
 
     function formatDate(d) {
@@ -779,48 +1833,23 @@
         return null;
     }
 
-    // QR Generation rendered at 77px width and height (70% of original 110px)
+    // Direct synchronous QR Code generation
     function renderStandardQR(text) {
         const container = document.getElementById('qrcode');
         if (!container) return;
         container.innerHTML = '';
 
-        const tempDiv = document.createElement('div');
-        tempDiv.style.display = 'none';
-        document.body.appendChild(tempDiv);
-
-        new QRCode(tempDiv, {
+        new QRCode(container, {
             text: text,
             width: 77,
             height: 77,
             colorDark: "#000000",
             colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.L
+            correctLevel: QRCode.CorrectLevel.M
         });
-
-        setTimeout(() => {
-            const canvas = tempDiv.querySelector('canvas');
-            const sourceImg = tempDiv.querySelector('img');
-
-            const finalImg = document.createElement('img');
-            finalImg.style.width = "77px";
-            finalImg.style.height = "77px";
-            finalImg.style.display = "block";
-            finalImg.style.margin = "0 auto";
-            finalImg.style.imageRendering = "pixelated";
-
-            if (canvas) {
-                finalImg.src = canvas.toDataURL('image/png');
-            } else if (sourceImg) {
-                finalImg.src = sourceImg.src;
-            }
-
-            container.innerHTML = '';
-            container.appendChild(finalImg);
-            document.body.removeChild(tempDiv);
-        }, 80);
     }
 
+    // Live Receipt Updater
     function updateReceipt() {
         try {
             const curr = document.getElementById('currency').value;
@@ -843,6 +1872,16 @@
             document.getElementById('outAmount').innerText = formattedAmount;
             document.getElementById('outTotal').innerText = formattedAmount;
 
+            // Update Amount in Words
+            const currencyName = getCurrencyName(curr);
+            document.getElementById('outAmountWords').innerText = numberToWords(amount, currencyName);
+
+            // Watermark display check
+            const watermarkImg = document.getElementById('watermarkImg');
+            if (watermarkImg) {
+                watermarkImg.style.display = userSettings.watermark ? 'block' : 'none';
+            }
+
             const qrPayload = 
 `Invoice: ${invoiceNo}
 Date: ${displayDate}
@@ -858,29 +1897,171 @@ Amount: ${curr}${amount.toLocaleString()}`;
         }
     }
 
+    // ================================================================
+    // STUNNING 1080X1920 HD CAPTURE WITH SCANNABLE QR & GORGEOUS LAYOUT
+    // ================================================================
     function captureReceiptScreenshot() {
-        const receiptElement = document.getElementById('receipt');
-        if (!receiptElement) return;
-
         updateReceipt();
 
+        const currentTemplate = document.getElementById('templateSelect').value;
+        const invNo = document.getElementById('outInvoiceNo').innerText || 'Receipt';
+        const curr = document.getElementById('currency').value;
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const displayDate = activeReceiptDate || formatDate(new Date());
+
+        const qrPayload = 
+`Invoice: ${document.getElementById('outInvoiceNo').innerText}
+Date: ${displayDate}
+From: ${document.getElementById('outReceivedFrom').innerText}
+To: ${document.getElementById('outReceivedTo').innerText}
+Desc: ${document.getElementById('outDescription').innerText}
+Type: ${document.getElementById('outTxType').innerText}
+Amount: ${curr}${amount.toLocaleString()}`;
+
+        // 1. Create dedicated 1080x1920 staging stage
+        const stage = document.createElement('div');
+        stage.id = 'hdExportStage';
+        stage.className = 'hd-1080-stage';
+        stage.style.position = 'fixed';
+        stage.style.left = '-99999px';
+        stage.style.top = '0';
+        stage.style.zIndex = '-9999';
+
+        // Set matching template background for the canvas
+        if (currentTemplate === 'dark' || currentTemplate === 'luxury') {
+            stage.style.background = '#0a0f0d';
+        } else if (currentTemplate === 'parchment') {
+            stage.style.background = '#f2ede0';
+        } else {
+            stage.style.background = '#ffffff';
+        }
+
+        // 2. Clone the receipt element
+        const clone = document.getElementById('receipt').cloneNode(true);
+        clone.className = 'receipt-card hd-1080-card template-' + currentTemplate;
+
+        // 3. Render a crisp 200px QR Code directly inside the cloned card
+        const clonedQrBox = clone.querySelector('#qrcode');
+        clonedQrBox.innerHTML = '';
+        
+        new QRCode(clonedQrBox, {
+            text: qrPayload,
+            width: 200,
+            height: 200,
+            colorDark: (currentTemplate === 'dark' || currentTemplate === 'luxury') ? "#000000" : "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+
+        // Ensure watermark visibility in clone
+        const clonedWatermark = clone.querySelector('.watermark-bg');
+        if (clonedWatermark) {
+            clonedWatermark.style.display = userSettings.watermark ? 'block' : 'none';
+        }
+
+        stage.appendChild(clone);
+        document.body.appendChild(stage);
+
+        // 4. Give the canvas 120ms to ensure QR context is drawn, then convert to image tag
         setTimeout(() => {
-            html2canvas(receiptElement, {
-                scale: 3, 
+            const qrCanvas = clonedQrBox.querySelector('canvas');
+            if (qrCanvas) {
+                const qrImg = document.createElement('img');
+                qrImg.src = qrCanvas.toDataURL('image/png');
+                qrImg.style.width = '200px';
+                qrImg.style.height = '200px';
+                qrImg.style.display = 'block';
+                qrImg.style.margin = '0 auto';
+                qrImg.style.imageRendering = 'pixelated';
+                clonedQrBox.innerHTML = '';
+                clonedQrBox.appendChild(qrImg);
+            }
+
+            html2canvas(stage, {
+                width: 1080,
+                height: 1920,
+                scale: 1, // Guaranteed exact 1080x1920 pixels
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: "#ffffff",
+                backgroundColor: stage.style.background,
                 logging: false
             }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = `Receipt_${document.getElementById('outInvoiceNo').innerText}.png`;
+                link.download = `AZAD_WATTAN_Receipt_${invNo}_1080x1920.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
+                if (document.body.contains(stage)) document.body.removeChild(stage);
             }).catch(err => {
-                console.error("Screenshot capture failed:", err);
-                alert("Failed to capture screenshot.");
+                console.error("HD capture error:", err);
+                alert("HD Screenshot capture failed: " + err.message);
+                if (document.body.contains(stage)) document.body.removeChild(stage);
             });
-        }, 300);
+        }, 120);
+    }
+
+    // ================================================================
+    // FULLY FUNCTIONAL WHATSAPP SHARING
+    // ================================================================
+    function openWhatsAppModal() {
+        const inv = document.getElementById('outInvoiceNo').innerText;
+        const date = document.getElementById('outDate').innerText;
+        const from = document.getElementById('outReceivedFrom').innerText;
+        const to = document.getElementById('outReceivedTo').innerText;
+        const desc = document.getElementById('outDescription').innerText;
+        const txType = document.getElementById('outTxType').innerText;
+        const total = document.getElementById('outTotal').innerText;
+        const words = document.getElementById('outAmountWords').innerText;
+
+        const formattedMessage = 
+`🧾 *${userSettings.companyName}*
+*TRANSACTION RECEIPT*
+----------------------------------------
+*Invoice No.:* ${inv}
+*Date:* ${date}
+*Received From:* ${from}
+*Received To:* ${to}
+*Description:* ${desc}
+*Transaction Type:* ${txType}
+*Total Amount:* ${total}
+*In Words:* ${words}
+----------------------------------------
+*Contact:* ${userSettings.phone}
+*Address:* ${userSettings.address}
+Thank you for your business!`;
+
+        document.getElementById('waMessagePreview').value = formattedMessage;
+        document.getElementById('whatsappModal').style.display = 'flex';
+    }
+
+    function closeWhatsAppModal() {
+        document.getElementById('whatsappModal').style.display = 'none';
+    }
+
+    function launchWhatsApp() {
+        const code = document.getElementById('waCountryCode').value;
+        const rawPhone = document.getElementById('waPhoneInput').value.replace(/[^0-9]/g, '');
+        const msg = document.getElementById('waMessagePreview').value;
+
+        let fullPhone = '';
+        if (rawPhone) {
+            fullPhone = rawPhone.startsWith(code) ? rawPhone : (code + rawPhone.replace(/^0+/, ''));
+        }
+
+        const url = fullPhone ? 
+            `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(msg)}` : 
+            `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+
+        window.open(url, '_blank');
+        closeWhatsAppModal();
+    }
+
+    function copyWhatsAppMessage() {
+        const text = document.getElementById('waMessagePreview').value;
+        navigator.clipboard.writeText(text).then(() => {
+            alert("Receipt message copied to clipboard!");
+        }).catch(err => {
+            console.error("Clipboard copy failed:", err);
+        });
     }
 
     function resetFilters() {
@@ -889,7 +2070,7 @@ Amount: ${curr}${amount.toLocaleString()}`;
         document.getElementById('filterCurrency').value = '';
         document.getElementById('filterDateFrom').value = '';
         document.getElementById('filterDateTo').value = '';
-        if (typeof renderTable === 'function') renderTable();
+        renderTable();
     }
 
     function exportToCSV() {
@@ -908,68 +2089,32 @@ Amount: ${curr}${amount.toLocaleString()}`;
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.setAttribute('href', url);
-        a.setAttribute('download', 'azad_wattan_cloud_receipts.csv');
+        a.setAttribute('download', `azad_wattan_receipts_${new Date().toISOString().slice(0,10)}.csv`);
         a.click();
     }
 
+    // Input debounce listener
+    let inputDebounce = null;
     window.addEventListener('DOMContentLoaded', () => {
+        loadSavedSettings();
         document.getElementById('invoiceNo').value = generateInvoiceNo();
         updateReceipt();
-        
-        if (typeof interact !== 'undefined') {
-            interact('.draggable-resizable-section')
-              .draggable({
-                  inertia: true,
-                  selector: '.form-title',
-                  modifiers: [
-                      interact.modifiers.restrictRect({ restriction: 'parent', endOnly: true })
-                  ],
-                  listeners: {
-                      move: (event) => {
-                          const target = event.target;
-                          let x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                          let y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-                          target.style.transform = `translate(${x}px, ${y}px)`;
-                          target.setAttribute('data-x', x);
-                          target.setAttribute('data-y', y);
-                      }
-                  }
-              })
-              .resizable({
-                  edges: { left: true, right: true, bottom: true, top: true },
-                  modifiers: [
-                      interact.modifiers.restrictSize({ min: { width: 280, height: 200 } })
-                  ],
-                  listeners: {
-                      move: (event) => {
-                          let target = event.target;
-                          let x = (parseFloat(target.getAttribute('data-x')) || 0);
-                          let y = (parseFloat(target.getAttribute('data-y')) || 0);
-                          target.style.width = event.rect.width + 'px';
-                          target.style.height = event.rect.height + 'px';
-                          x += event.deltaRect.left;
-                          y += event.deltaRect.top;
-                          target.style.transform = `translate(${x}px, ${y}px)`;
-                          target.setAttribute('data-x', x);
-                          target.setAttribute('data-y', y);
-                      }
-                  }
-              });
-        }
-    });
 
-    document.querySelectorAll('.main-wrapper input, .main-wrapper select').forEach(el => {
-        el.addEventListener('input', () => {
-            activeReceiptDate = null;
-            updateReceipt();
+        document.querySelectorAll('.card-3d input, .card-3d select').forEach(el => {
+            el.addEventListener('input', () => {
+                activeReceiptDate = null;
+                clearTimeout(inputDebounce);
+                inputDebounce = setTimeout(updateReceipt, 150);
+            });
         });
     });
 </script>
 
+<!-- Firebase Cloud Synchronization -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBMSn6BSvAJeUiACimff_4jm7WwnyhwV_A",
@@ -1011,7 +2156,7 @@ Amount: ${curr}${amount.toLocaleString()}`;
         errBox.style.display = 'none';
 
         if (!email || !pass) {
-            errBox.innerText = "Please fill in all fields.";
+            errBox.innerText = "Please enter both email and password.";
             errBox.style.display = 'block';
             return;
         }
@@ -1022,15 +2167,15 @@ Amount: ${curr}${amount.toLocaleString()}`;
             errBox.innerText = "Login Failed: " + error.message;
             errBox.style.display = 'block';
         }
-    }
+    };
 
     window.handleLogout = async function() {
         try {
             await signOut(auth);
         } catch (error) {
-            console.error("Error signing out:", error);
+            console.error("Sign out error:", error);
         }
-    }
+    };
 
     window.saveRecord = async function() {
         const curr = document.getElementById('currency').value;
@@ -1051,21 +2196,31 @@ Amount: ${curr}${amount.toLocaleString()}`;
             txType: txType,
             currency: curr.trim(),
             amount: amount,
+            template: document.getElementById('templateSelect').value || 'classic',
             createdAt: Date.now(),
             userEmail: auth.currentUser ? auth.currentUser.email : 'unknown'
         };
 
         try {
             await addDoc(collection(db, "transactions"), record);
+
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 65,
+                    spread: 60,
+                    origin: { y: 0.8 },
+                    colors: ['#2ecc71', '#1e4d3b', '#f1c40f']
+                });
+            }
+
             activeReceiptDate = null;
             document.getElementById('invoiceNo').value = generateInvoiceNo();
             updateReceipt();
-            alert('Transaction Saved & Synced Successfully!');
         } catch (error) {
             console.error("Error saving to cloud: ", error);
-            alert('Failed to save to cloud.');
+            alert('Failed to save to cloud: ' + error.message);
         }
-    }
+    };
 
     window.renderTable = function() {
         const tbody = document.getElementById('historyBody');
@@ -1073,7 +2228,7 @@ Amount: ${curr}${amount.toLocaleString()}`;
         tbody.innerHTML = '';
 
         if (globalRecords.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d;">No saved records found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d; padding:20px;">No saved records found.</td></tr>';
             return;
         }
 
@@ -1085,6 +2240,8 @@ Amount: ${curr}${amount.toLocaleString()}`;
         if (dateToVal) dateToVal.setHours(23, 59, 59, 999);
 
         let visibleCount = 0;
+        let todaySum = 0;
+        const todayStr = formatDate(new Date()).split(' ')[0];
 
         globalRecords.forEach((item, index) => {
             const textMatch = !searchVal || 
@@ -1103,12 +2260,16 @@ Amount: ${curr}${amount.toLocaleString()}`;
                 if (dateToVal && recDateObj > dateToVal) dateMatch = false;
             }
 
+            if (item.date && item.date.startsWith(todayStr)) {
+                todaySum += (item.amount || 0);
+            }
+
             if (textMatch && txMatch && currMatch && dateMatch) {
                 visibleCount++;
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${escapeHtml(item.date)}</td>
-                    <td>${escapeHtml(item.invoiceNo)}</td>
+                    <td><strong>${escapeHtml(item.invoiceNo)}</strong></td>
                     <td>${escapeHtml(item.receivedFrom) || '-'}</td>
                     <td>${escapeHtml(item.receivedTo) || '-'}</td>
                     <td>${escapeHtml(item.description) || '-'}</td>
@@ -1116,8 +2277,8 @@ Amount: ${curr}${amount.toLocaleString()}`;
                     <td><strong>${escapeHtml(item.currency)} ${item.amount.toLocaleString()}</strong></td>
                     <td>
                         <div class="action-btns">
-                            <button class="btn-view" onclick="viewReceiptByIndex(${index})">View / Print</button>
-                            <button class="btn-delete" onclick="deleteRecord('${item.id}')">Delete</button>
+                            <button class="btn-mini-view" onclick="viewReceiptByIndex(${index})" title="View / Print"><i class="fa-solid fa-eye"></i></button>
+                            <button class="btn-mini-del" onclick="deleteRecord('${item.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </td>
                 `;
@@ -1125,10 +2286,14 @@ Amount: ${curr}${amount.toLocaleString()}`;
             }
         });
 
+        // Update Stat Cards
+        document.getElementById('statTotalCount').innerText = globalRecords.length;
+        document.getElementById('statTodayTotal').innerText = `Rs. ${todaySum.toLocaleString()}`;
+
         if (visibleCount === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d;">No matching transaction records found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#7f8c8d; padding:20px;">No matching transaction records found.</td></tr>';
         }
-    }
+    };
 
     window.viewReceiptByIndex = function(index) {
         const item = globalRecords[index];
@@ -1145,37 +2310,40 @@ Amount: ${curr}${amount.toLocaleString()}`;
         document.getElementById('txType').value = item.txType;
         document.getElementById('amount').value = item.amount;
         
+        if (item.template) {
+            document.getElementById('templateSelect').value = item.template;
+            changeReceiptTemplate(item.template);
+        }
+
         activeReceiptDate = item.date;
         updateReceipt();
 
         document.getElementById('receipt').scrollIntoView({ behavior: 'smooth' });
-    }
+    };
 
     window.deleteRecord = async function(docId) {
-        if (!confirm('Are you sure you want to delete this record?')) return;
+        if (!confirm('Are you sure you want to permanently delete this cloud receipt?')) return;
         try {
             await deleteDoc(doc(db, "transactions", docId));
-            alert('Record deleted successfully.');
         } catch (error) {
             console.error("Error removing document: ", error);
-            alert('Failed to delete record.');
+            alert('Failed to delete record: ' + error.message);
         }
-    }
+    };
 
     function startRealtimeSync() {
-        unsubscribeSnapshot = onSnapshot(collection(db, "transactions"), (snapshot) => {
+        const q = query(collection(db, "transactions"), orderBy("createdAt", "desc"), limit(100));
+        unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
             globalRecords = [];
             snapshot.forEach((docSnap) => {
                 globalRecords.push({ id: docSnap.id, ...docSnap.data() });
             });
-
-            globalRecords.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
             renderTable();
         }, (error) => {
             console.error("Cloud sync error:", error);
             const tbody = document.getElementById('historyBody');
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#e74c3c;">Cloud Connection Error. Check Firestore Security Rules.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#e74c3c; padding:20px;">Cloud Connection Error. Check Firestore Security Rules.</td></tr>';
             }
         });
     }
